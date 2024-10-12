@@ -5,8 +5,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from scipy.signal import savgol_filter
-from scipy.ndimage import gaussian_filter
+from scipy.interpolate import make_interp_spline
 
 def read_signal_from_txt(file_path):
     try:
@@ -18,13 +17,14 @@ def read_signal_from_txt(file_path):
 
 def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, duration=1):
     num_samples = int(f_sampling * duration)
-    samples = np.arange(num_samples)
-    t = samples / f_sampling  # Time array for internal use (if needed)
+    samples = np.arange(num_samples) # indices of samples
+    t = samples / f_sampling  
     if signal_type == "sine":
         signal = amplitude * np.sin(2 * np.pi * f_analog * t + phase_shift)
     elif signal_type == "cosine":
         signal = amplitude * np.cos(2 * np.pi * f_analog * t + phase_shift)
-    return samples, signal
+    return t, signal
+
 
 class SignalPlotApp:
     def __init__(self, root):
@@ -32,36 +32,59 @@ class SignalPlotApp:
         self.root.title("Displaying Signals")
         self.button_frame = tk.Frame(self.root,bg="#f5b9f3")
         self.button_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        self.discrete_button = tk.Button(self.button_frame, text="Discrete Signal", command=self.plot_discrete_signal,bg="#b445b0" , fg="white",font=10)
+        self.discrete_button = tk.Button(self.button_frame, text="Analog & Discrete Signals", command=self.plot_both_signals, bg="#b445b0", fg="white", font=10)
         self.discrete_button.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        self.continuous_button = tk.Button(self.button_frame, text="Continuous Signal", command=self.plot_continuous_signal,bg="#b445b0" ,fg="white",font=10)
-        self.continuous_button.pack(side=tk.LEFT, padx=10, pady=10)
 
         self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window, bg="#b445b0", fg="white", font=10)
         self.generate_button.pack(side=tk.LEFT, padx=10, pady=10)
 
         self.canvas = None
 
-    def plot_signal(self, indices, samples, signal_type="discrete"):
+    def plot_signal(self, indices, samples, signal_type):
         fig = plt.Figure(figsize=(5, 4))
+        
         ax = fig.add_subplot(111)
         ax.grid(True)
-        ax.set_xlabel('Sample index')
+        ax.set_xlabel('Time(s)')
         ax.set_ylabel('Amplitude')
+        ax.plot(indices, samples, 'b')
+        ax.set_xlim(0,0.025)
+        ax.set_title('Sinusoidal Waves')
+        if self.canvas:
+            self.canvas.get_tk_widget().destroy()
+        self.canvas = FigureCanvasTkAgg(fig, master=self.root)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        if len(indices) > 50:
-            indices = indices[:50]
-            samples = samples[:50]
 
+    def plot_both_signals(self):
+        fig = plt.Figure(figsize=(10, 8))
+        ax1 = fig.add_subplot(211)  # Analog Signal on the top
+        ax2 = fig.add_subplot(212)  # Discrete Signal on the bottom
 
-        if signal_type == "discrete":
-            ax.stem(indices, samples, basefmt=" ")
-            ax.set_title('Discrete Signal Representation')
-        elif signal_type == "continuous":
-            ax.plot(indices, samples, 'r')
-            ax.set_title('Continuous Signal Representation')
+    # Example data (replace these with your actual data points)
+        samples = read_signal_from_txt("signal1.txt")
+        indices = np.arange(len(samples))
+    # Plotting the analog signal (continuous)
+        smooth_x = np.linspace(indices.min(), indices.max(), 500)  # Generate more points
+        spl = make_interp_spline(indices, samples, k=3)  # Cubic spline interpolation
+        smooth_y = spl(smooth_x)
+
+    # Plotting the smooth analog signal
+        ax1.plot(smooth_x, smooth_y, 'b')  # Smooth line without points
+        ax1.set_title('Analog Signal')
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Amplitude')
+        ax1.grid(True)
+
+    # Plotting the discrete signal (stem plot)
+        ax2.stem(indices, samples, linefmt='r-', markerfmt='ro', basefmt='gray')
+        ax2.set_title('Discrete Signal')
+        ax2.set_xlabel('Time (s)')
+        ax2.set_ylabel('Amplitude')
+        ax2.grid(True)
+
+    # Handle canvas redraw and destroy previous widget
         if self.canvas:
             self.canvas.get_tk_widget().destroy()
 
@@ -69,15 +92,6 @@ class SignalPlotApp:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-    def plot_discrete_signal(self):
-        samples = read_signal_from_txt("signal1.txt")
-        indices = np.arange(len(samples))
-        self.plot_signal(indices, samples, signal_type="discrete")
-    def plot_continuous_signal(self):
-        t = np.linspace(0, 2 * np.pi, 50)
-        samples = np.sin(t)
-        self.plot_signal(t, samples, signal_type="continuous")
-    
 
 
     def open_generate_window(self):
@@ -105,15 +119,10 @@ class SignalPlotApp:
         tk.Label(self.generate_window, text="Sampling Frequency (Hz):").grid(row=4, column=0, padx=10, pady=5)
         self.sampling_frequency_entry = tk.Entry(self.generate_window)
         self.sampling_frequency_entry.grid(row=4, column=1, padx=10, pady=5)
-
-        
-
         # Button to generate the signal
         generate_button = tk.Button(self.generate_window, text="Generate", command=self.generate_user_signal)
         generate_button.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
-    
 
-    
     def generate_user_signal(self):
         try:
             # Get user input values
@@ -130,11 +139,7 @@ class SignalPlotApp:
                 SignalSamplesAreEqual("SinOutput.txt",t,signal)
             elif signal_type=="cosine":
                 SignalSamplesAreEqual("CosOutput.txt",t,signal)
-            # Plot the generated signal
-            
-            # Sample sharp wave signal
-            
-            self.plot_signal(t, signal, signal_type="continuous")
+            self.plot_signal(t, signal, signal_type="sinsudil")
         
         except ValueError:
             messagebox.showerror("Input Error", "Please enter valid numbers for the signal parameters.")
