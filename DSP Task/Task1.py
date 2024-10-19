@@ -10,7 +10,8 @@ from scipy.interpolate import make_interp_spline
 def read_signals_from_txt_files():
     try:
         root = tk.Tk()
-        root.withdraw()
+        root.withdraw()  # Hide the root window
+
         # Allow selection of one or more files
         file_paths = filedialog.askopenfilenames(title="Select one or more files", filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
 
@@ -19,23 +20,33 @@ def read_signals_from_txt_files():
             return None, None
 
         signals = []
+        all_indices = []
+
         for file_path in file_paths:
-            signal = np.loadtxt(file_path, skiprows=3, usecols=1)
+            # Load both indices (first column) and signal values (second column)
+            data = np.loadtxt(file_path, skiprows=3, usecols=(0, 1))
+            indices = data[:, 0]  # First column for indices
+            signal = data[:, 1]   # Second column for signal values
+            all_indices.append(indices)
             signals.append(signal)
 
         if signals:
-            if len(signals) == 1:
-                # If only one file is selected, no need for padding, just return the single signal
-                indices = np.arange(len(signals[0]))
-                return indices, signals[0]  # Return a single signal instead of a list of signals
-            else:
-                # If multiple files are selected, pad shorter signals to match the longest one
-                max_len = max([len(signal) for signal in signals])
-                signals = [np.pad(signal, (0, max_len - len(signal)), mode='constant') for signal in signals]  # Padding shorter signals with zeros
-                indices = np.arange(max_len)
-                return indices, signals  # Return the list of signals
+            # Merge all indices, ensuring that we have a union of all index points
+            unified_indices = np.unique(np.concatenate(all_indices))
+
+            # Pad and align each signal to the unified set of indices
+            aligned_signals = []
+            for i, indices in enumerate(all_indices):
+                # Find where the original indices fit in the unified indices
+                aligned_signal = np.zeros_like(unified_indices, dtype=float)
+                idx_in_unified = np.searchsorted(unified_indices, indices)
+                aligned_signal[idx_in_unified] = signals[i]
+                aligned_signals.append(aligned_signal)
+
+            return unified_indices, aligned_signals  # Return the aligned signals
 
         return None, None
+
     except Exception as e:
         print(f"Error reading file: {e}")
         return None, None
@@ -54,38 +65,32 @@ class SignalPlotApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Displaying Signals")
-        # self.root.geometry('1400x100')
-        self.button_frame = tk.Frame(self.root, bg="#f5b9f3")
+        # self.root.geometry('1400x1400')
+        self.button_frame = tk.Frame(self.root, bg="#f2ede9")
         self.button_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-        self.discrete_button = tk.Button(self.button_frame, text="Read Signal",
-                                         command=self.plot_both_signals, bg="#b445b0", fg="white", font=7)
+
+        self.discrete_button = tk.Button(self.button_frame, text="Read Signal",command=self.plot_both_signals, bg="#ccbeb1", fg="black", font=7)
         self.discrete_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,
-                                         bg="#b445b0", fg="white", font=7)
+        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,bg="#ccbeb1", fg="black", font=7)
         self.generate_button.pack(side=tk.LEFT, padx=10, pady=10)
-        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#b445b0",
-                                    fg="white", font=7)
+
+        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1", fg="black", font=7)
         self.add_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,
-                                         bg="#b445b0", fg="white", font=7)
+        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,bg="#ccbeb1", fg="black", font=7)
         self.subtract_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,
-                                         bg="#b445b0", fg="white", font=7)
+        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,bg="#ccbeb1", fg="black", font=7)
         self.multiply_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,
-                                       bg="#b445b0", fg="white", font=7)
+        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,bg="#ccbeb1", fg="black", font=7)
         self.square_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,
-                                          bg="#b445b0", fg="white", font=7)
+        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,bg="#ccbeb1", fg="black", font=7)
         self.normalize_button.pack(side=tk.LEFT, padx=10, pady=10)
 
-        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,
-                                           bg="#b445b0", fg="white", font=7)
+        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,bg="#ccbeb1", fg="black", font=7)
         self.accumulate_button.pack(side=tk.LEFT, padx=10, pady=10)
         self.canvas = None
 
@@ -103,31 +108,36 @@ class SignalPlotApp:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-    def plot_both_signals(self):  # plot analog and digital signals
-        fig = plt.Figure(figsize=(10, 8))
-        ax1 = fig.add_subplot(211)
-        ax2 = fig.add_subplot(212)
-        indices,samples= read_signals_from_txt_files()
-        indices = np.arange(len(samples))
-        smooth_x = np.linspace(indices.min(), indices.max(), 500)
-        spl = make_interp_spline(indices, samples, k=3)
-        smooth_y = spl(smooth_x)
-        ax1.plot(smooth_x, smooth_y, 'b')
-        ax1.set_title('Analog Signal')
-        ax1.set_xlabel('Time (s)')
-        ax1.set_ylabel('Amplitude')
-        ax1.grid(True)
+    def plot_both_signals(self):
+        indices, signals = read_signals_from_txt_files()
+        if signals:
+            fig = plt.Figure(figsize=(10, 8))
+            ax1 = fig.add_subplot(211)
+            ax2 = fig.add_subplot(212)
 
-        ax2.stem(indices, samples, linefmt='r-', markerfmt='ro', basefmt='gray')
-        ax2.set_title('Discrete Signal')
-        ax2.set_xlabel('Time (s)')
-        ax2.set_ylabel('Amplitude')
-        ax2.grid(True)
-        if self.canvas:
-            self.canvas.get_tk_widget().destroy()
-        self.canvas = FigureCanvasTkAgg(fig, master=self.root)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+            # Plot the first signal using spline interpolation for smooth plotting
+            signal1 = signals[0]
+            smooth_x = np.linspace(indices.min(), indices.max(), 500)
+            spl = make_interp_spline(indices, signal1, k=3)
+            smooth_y = spl(smooth_x)
+            ax1.plot(smooth_x, smooth_y, 'b')
+            ax1.set_title('Analog Signal')
+            ax1.set_xlabel('Time (s)')
+            ax1.set_ylabel('Amplitude')
+            ax1.grid(True)
+
+            # Plot the discrete signal
+            ax2.stem(indices, signal1, linefmt='r-', markerfmt='ro', basefmt='gray')
+            ax2.set_title('Discrete Signal')
+            ax2.set_xlabel('Time (s)')
+            ax2.set_ylabel('Amplitude')
+            ax2.grid(True)
+
+            if self.canvas:
+                self.canvas.get_tk_widget().destroy()
+            self.canvas = FigureCanvasTkAgg(fig, master=self.root)
+            self.canvas.draw()
+            self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def open_generate_window(self):
         self.generate_window = tk.Toplevel(self.root)
@@ -186,7 +196,7 @@ class SignalPlotApp:
         print("Signal 2:", signals[1])
 
         # Subtract the second signal from the first
-        result = signals[1] - signals[0]
+        result = np.abs(signals[0] - signals[1])
         print("Subtracted Result:", result)  # Debugging print
 
         # Optionally, compare with an expected result if applicable
@@ -204,9 +214,13 @@ class SignalPlotApp:
 
         try:
             # Get the multiplier input from the user
+            signal = np.array(signals[0])  # Use the first (and only) signal
+
+            # Get the multiplier input from the user
             multiplier = float(self.get_user_input("Enter a multiplier: "))
 
-            result = signals * multiplier
+            # Multiply the signal by the multiplier
+            result = signal * multiplier
 
             # Debugging: Print the original and multiplied results
             print("Original Signal:", signals)
@@ -241,46 +255,90 @@ class SignalPlotApp:
         self.root.wait_window(input_window)
 
         return result[0]  # Return the stored input value
+
     def square_signal(self):
         indices, signals = read_signals_from_txt_files()
-        if signals is None or (isinstance(signals, list) and len(signals) != 1):
-            messagebox.showerror("Invalid")
+        # Check if signals is None or not a list or contains more than one signal
+        if signals is None or not isinstance(signals, list) or len(signals) != 1:
+            messagebox.showerror("Invalid", "Please select exactly one signal file.")
+            return
+        # Convert to NumPy array for processing
+        signal = np.array(signals[0])  # Get the single signal
+
+        # Check if the signal is numeric
+        if not np.issubdtype(signal.dtype, np.number):
+            messagebox.showerror("Invalid", "The selected signal is not numeric.")
             return
 
         try:
-            result = np.square(signals)
+            result = np.square(signal)
             SignalSamplesAreEqual("Output squaring signal 1.txt", indices, result)
             self.plot_signal(indices, result, title="Squared Signal")
-        except ValueError:
-            messagebox.showerror("invalid")
+        except ValueError as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
     def normalize_signal(self):
         indices, signals = read_signals_from_txt_files()
-        if signals is None or (isinstance(signals, list) and len(signals) != 1):
-            messagebox.showerror("Invalid")
+
+        # Check if we have one signal
+        if signals is None or not isinstance(signals, list) or len(signals) != 1:
+            messagebox.showerror("Invalid", "Please select exactly one signal file.")
             return
+
+        signal = np.array(signals[0])  # Convert to NumPy array for processing
+
+        # Check if the signal is numeric
+        if not np.issubdtype(signal.dtype, np.number):
+            messagebox.showerror("Invalid", "The selected signal is not numeric.")
+            return
+
         try:
             normalization_type = self.get_user_input("Normalize to -1 to 1 or 0 to 1? (Enter '-1' or '0')").strip()
-            # signal = signals[0]
+
+            # Check for zero division
+            signal_min = np.min(signal)
+            signal_max = np.max(signal)
+            range_signal = signal_max - signal_min
+
+            if range_signal == 0:
+                messagebox.showerror("Invalid", "Cannot normalize a constant signal.")
+                return
+
             if normalization_type == "-1":
-                result = 2 * (signals - np.min(signals)) / (np.max(signals) - np.min(signals)) - 1
+                result = 2 * (signal - signal_min) / range_signal - 1
             elif normalization_type == "0":
-                result = (signals - np.min(signals)) / (np.max(signals) - np.min(signals))
+                result = (signal - signal_min) / range_signal
+            else:
+                messagebox.showerror("Invalid", "Normalization type must be '-1' or '0'.")
+                return
+
             SignalSamplesAreEqual("normalize of signal 1 (from -1 to 1)-- output.txt", indices, result)
             self.plot_signal(indices, result, title=f"Normalized Signal ({normalization_type} to 1)")
-        except ValueError:
-            messagebox.showerror("invalid")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
     def accumulate_signal(self):
         indices, signals = read_signals_from_txt_files()
-        if signals is None or (isinstance(signals, list) and len(signals) != 1):
-            messagebox.showerror("Invalid")
+
+        # Check if we have one signal
+        if signals is None or not isinstance(signals, list) or len(signals) != 1:
+            messagebox.showerror("Invalid Input", "Please select exactly one signal file.")
             return
+
+        signal = np.array(signals[0])  # Convert to NumPy array for processing
+
+        # Check if the signal is numeric
+        if not np.issubdtype(signal.dtype, np.number):
+            messagebox.showerror("Invalid Input", "The selected signal is not numeric.")
+            return
+
         try:
-            result = np.cumsum(signals)
+            result = np.cumsum(signal)  # Calculate the cumulative sum
             SignalSamplesAreEqual("output accumulation for signal1.txt", indices, result)
             self.plot_signal(indices, result, title="Accumulated Signal")
-        except ValueError:
-            messagebox.showerror("invalid")
-# comparing generated signal by signal in  the files
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
 def SignalSamplesAreEqual(file_name, indices, samples):
     expected_indices = []
     expected_samples = []
