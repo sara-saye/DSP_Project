@@ -1,11 +1,13 @@
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import make_interp_spline
+from scipy.linalg import dft
 
 
 # Quantization Test
@@ -120,52 +122,6 @@ def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedVa
 
 
 # read signal from signal1.txt and ignoring the first 3 rows and read only the signal values
-def read_signals_from_txt_files():
-    try:
-        root = tk.Tk()
-        root.withdraw()  # Hide the root window
-
-        # Allow selection of one or more files
-        file_paths = filedialog.askopenfilenames(title="Select one or more files",
-                                                 filetypes=[("Text files", ".txt"), ("All files", ".*")])
-
-        if not file_paths:
-            print("No file selected.")
-            return None, None
-
-        signals = []
-        all_indices = []
-
-        for file_path in file_paths:
-            # Load both indices (first column) and signal values (second column)
-            data = np.loadtxt(file_path, skiprows=3, usecols=(0, 1))
-            indices = data[:, 0]  # First column for indices
-            signal = data[:, 1]  # Second column for signal values
-            all_indices.append(indices)
-            signals.append(signal)
-
-        if signals:
-            # Merge all indices, ensuring that we have a union of all index points
-            unified_indices = np.unique(np.concatenate(all_indices))
-
-            # Pad and align each signal to the unified set of indices
-            aligned_signals = []
-            for i, indices in enumerate(all_indices):
-                # Find where the original indices fit in the unified indices
-                aligned_signal = np.zeros_like(unified_indices, dtype=float)
-                idx_in_unified = np.searchsorted(unified_indices, indices)
-                aligned_signal[idx_in_unified] = signals[i]
-                aligned_signals.append(aligned_signal)
-
-            return unified_indices, aligned_signals  # Return the aligned signals
-
-        return None, None
-
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        return None, None
-
-
 # generate sin/cos waves and t=(n/Fs) is x-axis and signal is y-axis
 def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, duration=1):
     num_samples = int(f_sampling * duration)
@@ -176,8 +132,6 @@ def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, d
     elif signal_type == "cosine":
         signal = amplitude * np.cos(2 * np.pi * f_analog * t + phase_shift)
     return t, signal
-
-
 def SignalSamplesAreEqual(indices, samples):
     try:
         # Open a file dialog to select the comparison file
@@ -230,45 +184,114 @@ class SignalPlotApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Displaying Signals")
-        # self.root.geometry('1400x1400')
+
+        # Get the screen dimensions
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # Calculate 80% of the screen size
+        window_width = int(screen_width * 0.8)
+        window_height = int(screen_height * 0.8)
+
+        # Set the geometry of the window to 80% of the screen size
+        self.root.geometry(f'{window_width}x{window_height}')
+
         self.button_frame = tk.Frame(self.root, bg="#f2ede9")
         self.button_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+        # Create buttons with specified width and padding
+        button_width = 15  # Set a fixed width for buttons
+
         self.discrete_button = tk.Button(self.button_frame, text="Read Signal", command=self.plot_both_signals,
-                                         bg="#ccbeb1", fg="black", font=7)
-        self.discrete_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.discrete_button.grid(row=0, column=0, padx=10, pady=10)
 
         self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,
-                                         bg="#ccbeb1", fg="black", font=7)
-        self.generate_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.generate_button.grid(row=0, column=1, padx=10, pady=10)
 
         self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1",
-                                    fg="black", font=7)
-        self.add_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                    fg="black", font=7, width=button_width)
+        self.add_button.grid(row=0, column=2, padx=10, pady=10)
 
         self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,
-                                         bg="#ccbeb1", fg="black", font=7)
-        self.subtract_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.subtract_button.grid(row=0, column=3, padx=10, pady=10)
 
         self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,
-                                         bg="#ccbeb1", fg="black", font=7)
-        self.multiply_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.multiply_button.grid(row=0, column=4, padx=10, pady=10)
 
         self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,
-                                       bg="#ccbeb1", fg="black", font=7)
-        self.square_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                       bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.square_button.grid(row=0, column=5, padx=10, pady=10)
 
         self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,
-                                          bg="#ccbeb1", fg="black", font=7)
-        self.normalize_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                          bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.normalize_button.grid(row=1, column=0, padx=10, pady=10)
 
         self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,
-                                           bg="#ccbeb1", fg="black", font=7)
-        self.accumulate_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                           bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.accumulate_button.grid(row=1, column=1, padx=10, pady=10)
+
         self.quantize_button = tk.Button(self.button_frame, text="Quantize Signal", command=self.quantize_signal,
-                                         bg="#ccbeb1", fg="black", font=7)
-        self.quantize_button.pack(side=tk.LEFT, padx=10, pady=10)
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.quantize_button.grid(row=1, column=2, padx=10, pady=10)
+
+        # Add Frequency Domain button
+        self.frequency_button = tk.Button(self.button_frame, text="Frequency Domain",
+                                          command=self.show_frequency_options,
+                                          bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.frequency_button.grid(row=1, column=3, padx=10, pady=10)
+
+        # Ensure that the frame can grow and that buttons will stay centered
+        self.button_frame.pack_propagate(False)
+
         self.canvas = None
+    def read_signals_from_txt_files(self):
+        try:
+            root = tk.Tk()
+            root.withdraw()  # Hide the root window
+
+            # Allow selection of one or more files
+            file_paths = filedialog.askopenfilenames(title="Select one or more files",
+                                                     filetypes=[("Text files", ".txt"), ("All files", ".*")])
+
+            if not file_paths:
+                print("No file selected.")
+                return None, None
+
+            signals = []
+            all_indices = []
+
+            for file_path in file_paths:
+                # Load both indices (first column) and signal values (second column)
+                data = np.loadtxt(file_path, skiprows=3, usecols=(0, 1))
+                indices = data[:, 0]  # First column for indices
+                signal = data[:, 1]  # Second column for signal values
+                all_indices.append(indices)
+                signals.append(signal)
+
+            if signals:
+                # Merge all indices, ensuring that we have a union of all index points
+                unified_indices = np.unique(np.concatenate(all_indices))
+
+                # Pad and align each signal to the unified set of indices
+                aligned_signals = []
+                for i, indices in enumerate(all_indices):
+                    # Find where the original indices fit in the unified indices
+                    aligned_signal = np.zeros_like(unified_indices, dtype=float)
+                    idx_in_unified = np.searchsorted(unified_indices, indices)
+                    aligned_signal[idx_in_unified] = signals[i]
+                    aligned_signals.append(aligned_signal)
+
+                return unified_indices, aligned_signals  # Return the aligned signals
+
+            return None, None
+
+        except Exception as e:
+            print(f"Error reading file: {e}")
+            return None, None
 
     def plot_signal(self, indices, signal, title):
         fig = plt.Figure(figsize=(6, 5))
@@ -285,7 +308,7 @@ class SignalPlotApp:
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def plot_both_signals(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
         if signals:
             fig = plt.Figure(figsize=(10, 8))
             ax1 = fig.add_subplot(211)
@@ -337,7 +360,7 @@ class SignalPlotApp:
         generate_button.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
 
     def square_signal(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals =self.read_signals_from_txt_files()
         # Check if signals is None or not a list or contains more than one signal
         if signals is None or not isinstance(signals, list) or len(signals) != 1:
             messagebox.showerror("Invalid", "Please select exactly one signal file.")
@@ -358,7 +381,7 @@ class SignalPlotApp:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
     def normalize_signal(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
 
         # Check if we have one signal
         if signals is None or not isinstance(signals, list) or len(signals) != 1:
@@ -398,7 +421,7 @@ class SignalPlotApp:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
     def accumulate_signal(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals =self.read_signals_from_txt_files()
 
         # Ensure that exactly one signal is selected
         if signals is None or len(signals) != 1:
@@ -432,7 +455,7 @@ class SignalPlotApp:
             messagebox.showerror("Input Error", "Please enter valid numbers for the signal parameters.")
 
     def add_signals(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
         if signals:
             result = np.sum(signals, axis=0)
             SignalSamplesAreEqual(indices, result)
@@ -440,7 +463,7 @@ class SignalPlotApp:
 
     def subtract_signals(self):
         # Read signals from two different files
-        indices, signals = read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
 
         # Check if exactly two signals are selected
         if signals is None or len(signals) != 2:
@@ -459,7 +482,7 @@ class SignalPlotApp:
         self.plot_signal(indices, result, title="Subtracted Signals")
 
     def multiply_signal(self):
-        indices, signals = read_signals_from_txt_files()
+        indices, signals =self.read_signals_from_txt_files()
 
         # Ensure only one signal file is selected
         if signals is None or (isinstance(signals, list) and len(signals) != 1):
@@ -507,7 +530,7 @@ class SignalPlotApp:
 
     def quantize_signal(self):
         # Step 1: Read the input signal and indices
-        indices, signals = read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
         if signals is None or len(signals) != 1:
             messagebox.showerror("Input Error", "Please select exactly one signal file for quantization.")
             return
@@ -610,6 +633,112 @@ class SignalPlotApp:
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+    def fourier_transform(self, signal, inverse=False):
+        N = len(signal)
+        k = np.arange(N)
+        n = np.arange(N)
+        # Exponential factor
+        if inverse:
+            factor = 1 / N
+            exponent = np.exp(2j * np.pi * k[:, None] * n / N)  # IDFT
+        else:
+            factor = 1
+            exponent = np.exp(-2j * np.pi * k[:, None] * n / N)  # DFT
+
+        return factor * np.dot(exponent, signal)  # Compute DFT or IDFT
+
+    def show_frequency_options(self):
+        # Read the time and signal data
+        all_times, signals = self.read_signals_from_txt_files()
+
+        if signals is None or len(signals) == 0:
+            messagebox.showerror("Error", "No signals read from file.")
+            return
+
+        # Assuming you want to process the first signal
+        time = all_times[0]  # You may want to let the user choose which signal to analyze
+        signal = signals[0]  # Assuming we're taking the first signal for demonstration
+
+        # Ask user for sampling frequency
+        sampling_frequency = simpledialog.askfloat("Input", "Enter the sampling frequency in Hz:",
+                                                   minvalue=1.0)
+
+        if sampling_frequency is None:
+            return
+
+        # Perform Fourier Transform
+        spectrum = self.fourier_transform(signal)
+
+        # Frequency calculation
+        N = len(signal)
+        frequencies = np.fft.fftfreq(N, d=1 / sampling_frequency)
+
+        # Amplitude and Phase calculation
+        amplitude = np.abs(spectrum)
+        phase = np.angle(spectrum)
+        formatted_amplitude = [f"{amp:.16f}f" if isinstance(amp, float) and not amp.is_integer() else str(int(amp)) for amp in amplitude]
+        formatted_phase = [f"{ph:.16f}f" if isinstance(ph, float) and not ph.is_integer() else str(int(ph)) for ph in phase]
+
+
+        print("Formatted Generated Amplitudes and Phases:")
+        for amp, ph in zip(formatted_amplitude, formatted_phase):
+            print(f"Amplitude: {amp}, Phase: {ph}")
+        # Plotting frequency response
+        self.plot_frequency_response(frequencies, amplitude, phase, signal)
+
+    def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
+        plt.figure(figsize=(12, 8))
+
+        # Amplitude vs Frequency
+        plt.subplot(4, 1, 1)
+        plt.stem(frequencies, amplitude, basefmt=" ")
+        plt.title('Frequency vs Amplitude')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Amplitude')
+        plt.grid()
+
+        # Phase vs Frequency
+        plt.subplot(4, 1, 2)
+        plt.stem(frequencies, phase, basefmt=" ")
+        plt.title('Frequency vs Phase')
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Phase (radians)')
+        plt.grid()
+
+        # Reconstruct signal using IDFT
+        reconstructed_signal = self.fourier_transform(amplitude * np.exp(1j * phase), inverse=True)
+        reconstructed_signal_rounded = np.round(np.real(reconstructed_signal)).astype(int)
+
+        formatted_reconstructed = [(i, int(value)) for i, value in enumerate(reconstructed_signal_rounded)]
+
+        # Printing the reconstructed signal in the desired format
+        print("Reconstructed Signal:")
+        for index, value in formatted_reconstructed:
+            print(f"{index} {value}")
+        # Time values for plotting reconstructed signal
+        time_values = np.arange(len(original_signal)) / len(original_signal)  # Use discrete time values
+
+        # Reconstructed Signal
+        plt.subplot(4, 1, 3)
+        plt.stem(time_values, reconstructed_signal_rounded, label='Reconstructed Signal', linefmt='orange',
+                 markerfmt='ro', basefmt=" ")
+        plt.title('Reconstructed Signal from IDFT')
+        plt.xlabel('Sample Index')
+        plt.ylabel('Amplitude')
+        plt.grid()
+        plt.legend()
+
+        # Original Signal for comparison
+        plt.subplot(4, 1, 4)
+        plt.stem(time_values, original_signal, label='Original Signal', linefmt='green', markerfmt='go', basefmt=" ")
+        plt.title('Original Signal')
+        plt.xlabel('Sample Index')
+        plt.ylabel('Amplitude')
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
 
 def custom_cumsum(signal):
     csum_result = []
@@ -620,8 +749,6 @@ def custom_cumsum(signal):
         csum_result.append(running_total)  # Store the running total in the result list
 
     return np.array(csum_result)  # Convert the list to a NumPy array for consistency
-
-
 root = tk.Tk()
 app = SignalPlotApp(root)
 root.mainloop()
