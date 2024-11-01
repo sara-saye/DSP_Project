@@ -774,40 +774,43 @@ class SignalPlotApp:
 
             if recon_amplitude_comparison:
 
-                print("Reconstructed Amplitude comparison passed.")
+                print("Reconstructed Amplitude comparison passed Successfully.")
 
             else:
 
                 print("Reconstructed Amplitude comparison failed.")
 
-            original_signal=amp
-            time_values = np.arange(len(original_signal)) / len(original_signal)  # Use discrete time values
+            # original_signal=amp
+            time_values = np.arange(len(amp)) / len(amp)  # Use discrete time values
             # Reconstructed Signal
-            plt.subplot(4, 1, 3)
+
+            plt.subplot(3, 1, 3)
             plt.stem(time_values, reconstructed_amplitude, label='Reconstructed Signal', linefmt='orange',
                      markerfmt='ro', basefmt=" ")
-            plt.title('Reconstructed Signal from IDFT')
-            plt.xlabel('Sample Index')
-            plt.ylabel('Amplitude')
-            plt.grid()
-            plt.legend()
-            # Original Signal for comparison
-            plt.subplot(4, 1, 4)
-            plt.stem(time_values, original_signal, label='Original Signal', linefmt='green', markerfmt='go',
-                     basefmt=" ")
-            plt.title('Original Signal')
+            plt.title('Reconstructed Signal')
             plt.xlabel('Sample Index')
             plt.ylabel('Amplitude')
             plt.grid()
             plt.legend()
             plt.tight_layout()
             plt.show()
+            # Original Signal for comparison
+
+            # plt.subplot(4, 1, 4)
+            # plt.stem(time_values, original_signal, label='Original Signal', linefmt='green', markerfmt='go',
+            #          basefmt=" ")
+            # plt.title('Original Signal')
+            # plt.xlabel('Sample Index')
+            # plt.ylabel('Amplitude')
+            # plt.grid()
+            # plt.legend()
+
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
 
         # Amplitude vs Frequency
-        plt.subplot(4, 1, 1)
+        plt.subplot(3, 1, 1)
         plt.stem(frequencies, amplitude, basefmt=" ")
         plt.title('Frequency vs Amplitude')
         plt.xlabel('Frequency (Hz)')
@@ -815,7 +818,7 @@ class SignalPlotApp:
         plt.grid()
 
         # Phase vs Frequency
-        plt.subplot(4, 1, 2)
+        plt.subplot(3, 1, 2)
         plt.stem(frequencies, phase, basefmt=" ")
         plt.title('Frequency vs Phase')
         plt.xlabel('Frequency (Hz)')
