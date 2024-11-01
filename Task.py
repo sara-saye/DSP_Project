@@ -671,21 +671,7 @@ class SignalPlotApp:
             messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT'.")
             return
 
-        # Read the time and signal data
-        # all_times, signals = self.read_signals_from_txt_files()
-        # print('hello')
-        # if signals is None or len(signals) == 0:
-        #     messagebox.showerror("Error", "No signals read from file.")
-        #     return
-        #
-        # # Assuming you want to process the first signal
-        # time = all_times[0]  # You may want to let the user choose which signal to analyze
-        # signal = signals[0]  # Assuming we're taking the first signal for demonstration
-        #
-        # # Ask user for sampling frequency
-        # sampling_frequency = simpledialog.askfloat("Input", "Enter the sampling frequency in Hz:", minvalue=1.0)
-        # if sampling_frequency is None:
-        #     return
+
 
         if transform_type == 'DFT':
             # Perform Fourier Transform
@@ -714,10 +700,7 @@ class SignalPlotApp:
             amplitude = np.abs(spectrum)
             phase = np.angle(spectrum)
 
-            # Browse for the file containing reference amplitude and phase
-            # reference_file_path = filedialog.askopenfilename(title="Select Reference Amplitude and Phase File", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-            # if not reference_file_path:
-            #     return
+
 
             # Read the reference amplitude and phase from the file
             reference_amplitude, reference_phase = self.read_reference_data()
@@ -796,14 +779,7 @@ class SignalPlotApp:
             plt.show()
             # Original Signal for comparison
 
-            # plt.subplot(4, 1, 4)
-            # plt.stem(time_values, original_signal, label='Original Signal', linefmt='green', markerfmt='go',
-            #          basefmt=" ")
-            # plt.title('Original Signal')
-            # plt.xlabel('Sample Index')
-            # plt.ylabel('Amplitude')
-            # plt.grid()
-            # plt.legend()
+
 
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
