@@ -7,8 +7,58 @@ from tkinter import messagebox, simpledialog
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import make_interp_spline
+
+
+def Shift_Fold_Signal(Your_indices, Your_samples):
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    file_name = filedialog.askopenfilename(title="Select Signal File")
+    if not file_name:
+        print("No file selected.")
+        return
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L = line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+
+    print(expected_samples)
+    print(expected_indices)
+    print(Your_samples)
+    print(Your_indices)
+
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if (Your_indices[i] != expected_indices[i]):
+            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one")
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one")
+            return
+    print("Shift_Fold_Signal Test case passed successfully")
+
+
 # Quantization Test
-def QuantizationTest1( Your_EncodedValues, Your_QuantizedValues):
+def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
     file_name = filedialog.askopenfilename(title="Select Signal File")
@@ -52,6 +102,8 @@ def QuantizationTest1( Your_EncodedValues, Your_QuantizedValues):
                 "QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one")
             return
     print("QuantizationTest1 Test case passed successfully")
+
+
 def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedValues, Your_SampledError):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -114,6 +166,8 @@ def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedVa
             print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one")
             return
     print("QuantizationTest2 Test case passed successfully")
+
+
 # read signal from signal1.txt and ignoring the first 3 rows and read only the signal values
 # generate sin/cos waves and t=(n/Fs) is x-axis and signal is y-axis
 def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, duration=1):
@@ -125,13 +179,16 @@ def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, d
     elif signal_type == "cosine":
         signal = amplitude * np.cos(2 * np.pi * f_analog * t + phase_shift)
     return t, signal
+
+
 def SignalSamplesAreEqual(indices, samples):
     try:
         # Open a file dialog to select the comparison file
         root = tk.Tk()
         root.withdraw()  # Hide the root window
 
-        file_path = filedialog.askopenfilename(title="Select the file to compare",filetypes=[("Text files", ".txt"), ("All files", ".*")])
+        file_path = filedialog.askopenfilename(title="Select the file to compare",
+                                               filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
         if not file_path:
             print("No file selected.")
@@ -169,6 +226,7 @@ def SignalSamplesAreEqual(indices, samples):
 
     except Exception as e:
         print(f"Error: {e}")
+
 
 class SignalPlotApp:
     def __init__(self, root):
@@ -234,17 +292,23 @@ class SignalPlotApp:
                                           bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.frequency_button.grid(row=1, column=3, padx=10, pady=10)
 
+        self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain,
+                                     bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.time_domain.grid(row=1, column=2, padx=10, pady=10)
+
         # Ensure that the frame can grow and that buttons will stay centered
         self.button_frame.pack_propagate(False)
 
         self.canvas = None
+
     def read_signals_from_txt_files(self):
         try:
             root = tk.Tk()
             root.withdraw()  # Hide the root window
 
             # Allow selection of one or more files
-            file_paths = filedialog.askopenfilenames(title="Select one or more files",filetypes=[("Text files", ".txt"), ("All files", ".*")])
+            file_paths = filedialog.askopenfilenames(title="Select one or more files",
+                                                     filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
             if not file_paths:
                 print("No file selected.")
@@ -349,7 +413,7 @@ class SignalPlotApp:
         generate_button.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
 
     def square_signal(self):
-        indices, signals =self.read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
         # Check if signals is None or not a list or contains more than one signal
         if signals is None or not isinstance(signals, list) or len(signals) != 1:
             messagebox.showerror("Invalid", "Please select exactly one signal file.")
@@ -410,7 +474,7 @@ class SignalPlotApp:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
     def accumulate_signal(self):
-        indices, signals =self.read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
 
         # Ensure that exactly one signal is selected
         if signals is None or len(signals) != 1:
@@ -470,7 +534,7 @@ class SignalPlotApp:
         self.plot_signal(indices, result, title="Subtracted Signals")
 
     def multiply_signal(self):
-        indices, signals =self.read_signals_from_txt_files()
+        indices, signals = self.read_signals_from_txt_files()
 
         # Ensure only one signal file is selected
         if signals is None or (isinstance(signals, list) and len(signals) != 1):
@@ -556,10 +620,10 @@ class SignalPlotApp:
 
         if is_bits:  # TestCase 1: quantization with bits, compare encoded and quantized
             # Automatically call QuantizationTest1 to validate encoded and quantized values
-            QuantizationTest1( encoded_indices, quantized_signal)
+            QuantizationTest1(encoded_indices, quantized_signal)
 
         else:  # TestCase 2: quantization with levels, compare interval index, encoded, quantized, and error
-            QuantizationTest2( interval_indices, encoded_indices, quantized_signal, quantization_error)
+            QuantizationTest2(interval_indices, encoded_indices, quantized_signal, quantization_error)
 
     def perform_quantization(self, signal, levels):
         # Find the signal range (min and max values)
@@ -666,9 +730,9 @@ class SignalPlotApp:
 
     def show_frequency_options(self):
         transform_type = simpledialog.askstring("Select Transform",
-                                                "Enter 'DFT' for Discrete Fourier Transform or 'IDFT' for Inverse Discrete Fourier Transform:")
-        if transform_type not in ['DFT', 'IDFT']:
-            messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT'.")
+                                                "Enter 'DFT' for Discrete Fourier Transform or 'IDFT' for Inverse Discrete Fourier Transform or 'DCT' for Discrete Cosine Transform :")
+        if transform_type not in ['DFT', 'IDFT', 'DCT']:
+            messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT' or 'DCT'.")
             return
 
         if transform_type == 'DFT':
@@ -686,7 +750,6 @@ class SignalPlotApp:
 
             N = len(signal)
             angular_frequencies = np.array([2 * np.pi * k * sampling_frequency / N for k in range(N)])
-
 
             amplitude = np.abs(spectrum)
             phase = np.angle(spectrum)
@@ -750,6 +813,64 @@ class SignalPlotApp:
             plt.legend()
             plt.tight_layout()
             plt.show()
+        elif transform_type == 'DCT':
+            indeses, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            m = int(self.get_user_input("Enter number of DCT coefficients:"))
+            signal = signals[0]
+            rst = compute_dct(signal, m)
+            self.plot_signal(indeses, rst, "DCT")
+            indeses.fill(0)
+            SignalSamplesAreEqual(indeses, rst)
+
+    def time_domain(self):
+        operation = simpledialog.askstring("Select number of operation",
+                                  """1- Derivative Signal
+                                   2- Shift Signal
+                                   3- Fold Signal
+                                   4- Shift Folding Signal:""")
+        if operation not in ['1', '2', '3', '4']:
+            messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT' or 'DCT'.")
+            return
+        if operation == '1':
+           DerivativeSignal()
+            # index1 = np.arange(firstdev)
+            # self.plot_signal(index1, firstdev, "First Derivative")
+            # index2 = np.arange(secondev)
+            # self.plot_signal(index2, secondev, "Second Derivative")
+
+        elif operation == '2':
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            k = int(self.get_user_input("Enter number of shifts 'k': "))
+            all_times, shifted = shift_signal(signal, k,all_times)
+            self.plot_signal(all_times, shifted, "Shifted Signal")
+        elif operation == '3':
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            all_times, folded = fold_signal(signal,all_times)
+            SignalSamplesAreEqual(all_times,folded)
+            self.plot_signal(all_times, folded, "Folded Signal")
+
+        elif operation == '4':
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            all_times,folded = fold_signal(signal,all_times)
+            k = int(self.get_user_input("Enter number of shifts 'k': "))
+            all_times, shiftedfolded = shift_signal(folded, k,all_times)
+            Shift_Fold_Signal(all_times, shiftedfolded)
+            self.plot_signal(all_times, shiftedfolded, "Shift Folded Signal")
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
@@ -771,6 +892,93 @@ class SignalPlotApp:
         plt.grid()
         plt.show()
 
+
+def first_derivative(signal):
+    N = len(signal)
+    derivative = [0] * (N - 1)
+    for n in range(1, N):
+        derivative[n - 1] = signal[n] - signal[n - 1]
+    return derivative
+
+def second_derivative(signal):
+    N = len(signal)
+    derivative = [0] * (N - 2)
+    for n in range(1, N - 1):
+        derivative[n - 1] = signal[n + 1] - 2 * signal[n] + signal[n - 1]
+    return derivative
+
+def shift_signal(signal, k, indices):
+    N = len(signal)
+    shifted_signal = [0] * N
+    shifted_indices = [0] * N
+
+    for n in range(N):
+        shifted_position = n - k
+        if 0 <= shifted_position < N:
+            shifted_signal[n] = signal[shifted_position]
+            shifted_indices[n] = indices[shifted_position] + k
+        else:
+            # Handle out-of-bounds positions (e.g., fill with None or keep indices consistent)
+            shifted_signal[n] = 0
+            shifted_indices[n] = indices[n]
+
+    return shifted_signal, shifted_indices
+
+
+def fold_signal(signal,indices):
+    folded_indices = indices[::-1]
+    folded_signal = signal[::-1]
+    return folded_indices,folded_signal
+  # Reverse the list manually
+
+
+def DerivativeSignal():
+    InputSignal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0,
+                   19.0, 20.0,
+                   21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0,
+                   38.0,
+                   39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0,
+                   56.0,
+                   57.0, 58.0, 59.0, 60.0, 61.0, 62.0, 63.0, 64.0, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 71.0, 72.0, 73.0,
+                   74.0,
+                   75.0, 76.0, 77.0, 78.0, 79.0, 80.0, 81.0, 82.0, 83.0, 84.0, 85.0, 86.0, 87.0, 88.0, 89.0, 90.0, 91.0,
+                   92.0,
+                   93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 100.0]
+    expectedOutput_first = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                            1, 1, 1, 1, 1, 1]
+    expectedOutput_second = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 0, 0]
+    FirstDrev = first_derivative(InputSignal)
+    SecondDrev = second_derivative(InputSignal)
+    if ((len(FirstDrev) != len(expectedOutput_first)) or (len(SecondDrev) != len(expectedOutput_second))):
+        print("mismatch in length")
+        return
+    first = second = True
+    for i in range(len(expectedOutput_first)):
+        if abs(FirstDrev[i] - expectedOutput_first[i]) < 0.01:
+            continue
+        else:
+            first = False
+            print("1st derivative wrong")
+            return
+    for i in range(len(expectedOutput_second)):
+        if abs(SecondDrev[i] - expectedOutput_second[i]) < 0.01:
+            continue
+        else:
+            second = False
+            print("2nd derivative wrong")
+            return
+    if (first and second):
+        print("Derivative Test case passed successfully")
+    else:
+        print("Derivative Test case failed")
+    return FirstDrev, SecondDrev
+
+
 def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
     if len(SignalInput) != len(SignalOutput):
         return False
@@ -779,11 +987,13 @@ def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
             return False
     return True
 
+
 # Function to round phase shift
 def RoundPhaseShift(P):
     while P < 0:
         P += 2 * math.pi
     return float(P % (2 * math.pi))
+
 
 # Function to compare phase shifts
 def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
@@ -795,6 +1005,8 @@ def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
         if abs(A - B) > 0.0001:
             return False
     return True
+
+
 def custom_cumsum(signal):
     csum_result = []
     running_total = 0  # Initialize the running total to 0
@@ -804,6 +1016,21 @@ def custom_cumsum(signal):
         csum_result.append(running_total)  # Store the running total in the result list
 
     return np.array(csum_result)  # Convert the list to a NumPy array for consistency
+
+
+def compute_dct(signal, m):
+    N = len(signal)
+    dct_result = [
+        np.sqrt(2 / N) * sum(signal[n] * np.cos(np.pi / (4 * N) * (2 * n - 1) * (2 * k - 1)) for n in range(N)) for k in
+        range(N)]
+    # Save the first m coefficients to a text file
+    with open('dct_coefficients.txt', 'w') as f:
+        for value in dct_result[:m]:
+            f.write(f"{value}\n")
+    print(f"The first {m} DCT coefficients have been saved to 'dct_coefficients.txt'.")
+    return dct_result
+
+
 root = tk.Tk()
 app = SignalPlotApp(root)
 root.mainloop()
