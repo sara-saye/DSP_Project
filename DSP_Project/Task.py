@@ -665,137 +665,85 @@ class SignalPlotApp:
         return factor * np.dot(exponent, signal)  # Compute DFT or IDFT
 
     def show_frequency_options(self):
-        # Ask user to choose between DFT and IDFT
-        transform_type = simpledialog.askstring("Select Transform", "Enter 'DFT' for Discrete Fourier Transform or 'IDFT' for Inverse Discrete Fourier Transform:")
+        transform_type = simpledialog.askstring("Select Transform",
+                                                "Enter 'DFT' for Discrete Fourier Transform or 'IDFT' for Inverse Discrete Fourier Transform:")
         if transform_type not in ['DFT', 'IDFT']:
             messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT'.")
             return
 
-        # Read the time and signal data
-        # all_times, signals = self.read_signals_from_txt_files()
-        # print('hello')
-        # if signals is None or len(signals) == 0:
-        #     messagebox.showerror("Error", "No signals read from file.")
-        #     return
-        #
-        # # Assuming you want to process the first signal
-        # time = all_times[0]  # You may want to let the user choose which signal to analyze
-        # signal = signals[0]  # Assuming we're taking the first signal for demonstration
-        #
-        # # Ask user for sampling frequency
-        # sampling_frequency = simpledialog.askfloat("Input", "Enter the sampling frequency in Hz:", minvalue=1.0)
-        # if sampling_frequency is None:
-        #     return
-
         if transform_type == 'DFT':
-            # Perform Fourier Transform
             all_times, signals = self.read_signals_from_txt_files()
-
             if signals is None or len(signals) == 0:
                 messagebox.showerror("Error", "No signals read from file.")
                 return
 
-            # Assuming you want to process the first signal
-            time = all_times[0]  # You may want to let the user choose which signal to analyze
-            signal = signals[0]  # Assuming we're taking the first signal for demonstration
-
-            # Ask user for sampling frequency
+            signal = signals[0]
             sampling_frequency = simpledialog.askfloat("Input", "Enter the sampling frequency in Hz:", minvalue=1.0)
             if sampling_frequency is None:
                 return
 
             spectrum = self.fourier_transform(signal)
 
-            # Frequency calculation
             N = len(signal)
-            frequencies = np.fft.fftfreq(N, d=1 / sampling_frequency)
+            angular_frequencies = np.array([2 * np.pi * k * sampling_frequency / N for k in range(N)])
 
-            # Amplitude and Phase calculation
+
             amplitude = np.abs(spectrum)
             phase = np.angle(spectrum)
 
-            # Browse for the file containing reference amplitude and phase
-            # reference_file_path = filedialog.askopenfilename(title="Select Reference Amplitude and Phase File", filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
-            # if not reference_file_path:
-            #     return
-
-            # Read the reference amplitude and phase from the file
             reference_amplitude, reference_phase = self.read_reference_data()
 
-            # Compare amplitude and phase with the original signal's amplitude and phase
             amplitude_comparison = SignalComapreAmplitude(amplitude, reference_amplitude)
             phase_comparison = SignalComaprePhaseShift(phase, reference_phase)
 
             if amplitude_comparison:
-                print("Amplitude comparison passed Successfully.")
+                print("Amplitude comparison passed successfully.")
             else:
                 print("Amplitude comparison failed.")
 
             if phase_comparison:
-                print("Phase comparison passed Successfully.")
+                print("Phase comparison passed successfully.")
             else:
                 print("Phase comparison failed.")
-            self.plot_frequency_response(frequencies, amplitude, phase, signal)
 
+            self.plot_frequency_response(angular_frequencies, amplitude, phase, signal)
 
         elif transform_type == 'IDFT':
-
-            # Reconstruct signal using IDFT
-
             amp, phase = self.read_reference_data()
-
             if not amp or not phase:
                 print("Error: No amplitude or phase data read from the reference file.")
-
                 return
 
             sampling_frequency = simpledialog.askfloat("Input", "Enter the sampling frequency in Hz:", minvalue=1.0)
-
             if sampling_frequency is None:
                 return
 
-            # Create complex spectrum
+            amp = np.array(amp)
+            phase = np.array(phase)
 
-            complex_spectrum = np.array(amp) * np.exp(1j * np.array(phase))
+            real_part = amp * np.cos(phase)
+            imaginary_part = amp * np.sin(phase)
+            complex_spectrum = real_part + 1j * imaginary_part
 
-            reconstructed_signal = np.fft.ifft(complex_spectrum)
-
-            reconstructed_amplitude = np.real(reconstructed_signal).tolist()  # Convert to list
-
-            # Read reference signal and convert it to a list for comparison
+            reconstructed_signal = self.fourier_transform(complex_spectrum, inverse=True)
+            reconstructed_amplitude = np.round(np.real(reconstructed_signal), decimals=0).tolist()
 
             reference_time, reference_signal = self.read_signals_from_txt_files()
-
-            reference_signal = reference_signal[0].tolist()  # Assuming the first signal is being used
-
-            # Perform amplitude comparison
+            reference_signal = reference_signal[0].tolist()
 
             recon_amplitude_comparison = SignalComapreAmplitude(reconstructed_amplitude, reference_signal)
 
             if recon_amplitude_comparison:
-
-                print("Reconstructed Amplitude comparison passed.")
-
+                print("Reconstructed Amplitude comparison passed successfully.")
             else:
-
                 print("Reconstructed Amplitude comparison failed.")
 
-            original_signal=amp
-            time_values = np.arange(len(original_signal)) / len(original_signal)  # Use discrete time values
-            # Reconstructed Signal
-            plt.subplot(4, 1, 3)
+            time_values = np.arange(len(amp)) / len(amp)
+
+            plt.subplot(3, 1, 3)
             plt.stem(time_values, reconstructed_amplitude, label='Reconstructed Signal', linefmt='orange',
                      markerfmt='ro', basefmt=" ")
-            plt.title('Reconstructed Signal from IDFT')
-            plt.xlabel('Sample Index')
-            plt.ylabel('Amplitude')
-            plt.grid()
-            plt.legend()
-            # Original Signal for comparison
-            plt.subplot(4, 1, 4)
-            plt.stem(time_values, original_signal, label='Original Signal', linefmt='green', markerfmt='go',
-                     basefmt=" ")
-            plt.title('Original Signal')
+            plt.title('Reconstructed Signal')
             plt.xlabel('Sample Index')
             plt.ylabel('Amplitude')
             plt.grid()
@@ -807,7 +755,7 @@ class SignalPlotApp:
         plt.figure(figsize=(12, 8))
 
         # Amplitude vs Frequency
-        plt.subplot(4, 1, 1)
+        plt.subplot(3, 1, 1)
         plt.stem(frequencies, amplitude, basefmt=" ")
         plt.title('Frequency vs Amplitude')
         plt.xlabel('Frequency (Hz)')
@@ -815,7 +763,7 @@ class SignalPlotApp:
         plt.grid()
 
         # Phase vs Frequency
-        plt.subplot(4, 1, 2)
+        plt.subplot(3, 1, 2)
         plt.stem(frequencies, phase, basefmt=" ")
         plt.title('Frequency vs Phase')
         plt.xlabel('Frequency (Hz)')
