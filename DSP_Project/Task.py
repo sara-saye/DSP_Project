@@ -9,54 +9,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import make_interp_spline
 
 
-def Shift_Fold_Signal(Your_indices, Your_samples):
-    root = tk.Tk()
-    root.withdraw()  # Hide the main tkinter window
-    file_name = filedialog.askopenfilename(title="Select Signal File")
-    if not file_name:
-        print("No file selected.")
-        return
-    expected_indices = []
-    expected_samples = []
-    with open(file_name, 'r') as f:
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        line = f.readline()
-        while line:
-            # process line
-            L = line.strip()
-            if len(L.split(' ')) == 2:
-                L = line.split(' ')
-                V1 = int(L[0])
-                V2 = float(L[1])
-                expected_indices.append(V1)
-                expected_samples.append(V2)
-                line = f.readline()
-            else:
-                break
-
-    print(expected_samples)
-    print(expected_indices)
-    print(Your_samples)
-    print(Your_indices)
-
-    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
-        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
-        return
-    for i in range(len(Your_indices)):
-        if (Your_indices[i] != expected_indices[i]):
-            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one")
-            return
-    for i in range(len(expected_samples)):
-        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
-            continue
-        else:
-            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one")
-            return
-    print("Shift_Fold_Signal Test case passed successfully")
-
-
 # Quantization Test
 def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
     root = tk.Tk()
@@ -228,6 +180,51 @@ def SignalSamplesAreEqual(indices, samples):
         print(f"Error: {e}")
 
 
+def Shift_Fold_Signal(Your_indices, Your_samples):
+    root = tk.Tk()
+    root.withdraw()  # Hide the main tkinter window
+    file_name = filedialog.askopenfilename(title="Select Signal File")
+    if not file_name:
+        print("No file selected.")
+        return
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L = line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    print("Current Output Test file is: ")
+    print(file_name)
+    print("\n")
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        print("Shift_Fold_Signal Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if (Your_indices[i] != expected_indices[i]):
+            print("Shift_Fold_Signal Test case failed, your signal have different indicies from the expected one")
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one")
+            return
+    print("Shift_Fold_Signal Test case passed successfully")
+
+
 class SignalPlotApp:
     def __init__(self, root):
         self.root = root
@@ -291,12 +288,10 @@ class SignalPlotApp:
                                           command=self.show_frequency_options,
                                           bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.frequency_button.grid(row=1, column=3, padx=10, pady=10)
-
         self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain,
                                      bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.time_domain.grid(row=1, column=2, padx=10, pady=10)
 
-        # Ensure that the frame can grow and that buttons will stay centered
         self.button_frame.pack_propagate(False)
 
         self.canvas = None
@@ -825,53 +820,6 @@ class SignalPlotApp:
             indeses.fill(0)
             SignalSamplesAreEqual(indeses, rst)
 
-    def time_domain(self):
-        operation = simpledialog.askstring("Select number of operation",
-                                  """1- Derivative Signal
-                                   2- Shift Signal
-                                   3- Fold Signal
-                                   4- Shift Folding Signal:""")
-        if operation not in ['1', '2', '3', '4']:
-            messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT' or 'DCT'.")
-            return
-        if operation == '1':
-           DerivativeSignal()
-            # index1 = np.arange(firstdev)
-            # self.plot_signal(index1, firstdev, "First Derivative")
-            # index2 = np.arange(secondev)
-            # self.plot_signal(index2, secondev, "Second Derivative")
-
-        elif operation == '2':
-            all_times, signals = self.read_signals_from_txt_files()
-            if signals is None or len(signals) == 0:
-                messagebox.showerror("Error", "No signals read from file.")
-                return
-            signal = signals[0]
-            k = int(self.get_user_input("Enter number of shifts 'k': "))
-            all_times, shifted = shift_signal(signal, k,all_times)
-            self.plot_signal(all_times, shifted, "Shifted Signal")
-        elif operation == '3':
-            all_times, signals = self.read_signals_from_txt_files()
-            if signals is None or len(signals) == 0:
-                messagebox.showerror("Error", "No signals read from file.")
-                return
-            signal = signals[0]
-            all_times, folded = fold_signal(signal,all_times)
-            SignalSamplesAreEqual(all_times,folded)
-            self.plot_signal(all_times, folded, "Folded Signal")
-
-        elif operation == '4':
-            all_times, signals = self.read_signals_from_txt_files()
-            if signals is None or len(signals) == 0:
-                messagebox.showerror("Error", "No signals read from file.")
-                return
-            signal = signals[0]
-            all_times,folded = fold_signal(signal,all_times)
-            k = int(self.get_user_input("Enter number of shifts 'k': "))
-            all_times, shiftedfolded = shift_signal(folded, k,all_times)
-            Shift_Fold_Signal(all_times, shiftedfolded)
-            self.plot_signal(all_times, shiftedfolded, "Shift Folded Signal")
-
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
 
@@ -892,91 +840,111 @@ class SignalPlotApp:
         plt.grid()
         plt.show()
 
-
-def first_derivative(signal):
-    N = len(signal)
-    derivative = [0] * (N - 1)
-    for n in range(1, N):
-        derivative[n - 1] = signal[n] - signal[n - 1]
-    return derivative
-
-def second_derivative(signal):
-    N = len(signal)
-    derivative = [0] * (N - 2)
-    for n in range(1, N - 1):
-        derivative[n - 1] = signal[n + 1] - 2 * signal[n] + signal[n - 1]
-    return derivative
-
-def shift_signal(signal, k, indices):
-    N = len(signal)
-    shifted_signal = [0] * N
-    shifted_indices = [0] * N
-
-    for n in range(N):
-        shifted_position = n - k
-        if 0 <= shifted_position < N:
-            shifted_signal[n] = signal[shifted_position]
-            shifted_indices[n] = indices[shifted_position] + k
-        else:
-            # Handle out-of-bounds positions (e.g., fill with None or keep indices consistent)
-            shifted_signal[n] = 0
-            shifted_indices[n] = indices[n]
-
-    return shifted_signal, shifted_indices
-
-
-def fold_signal(signal,indices):
-    folded_indices = indices[::-1]
-    folded_signal = signal[::-1]
-    return folded_indices,folded_signal
-  # Reverse the list manually
-
-
-def DerivativeSignal():
-    InputSignal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0,
-                   19.0, 20.0,
-                   21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0,
-                   38.0,
-                   39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0,
-                   56.0,
-                   57.0, 58.0, 59.0, 60.0, 61.0, 62.0, 63.0, 64.0, 65.0, 66.0, 67.0, 68.0, 69.0, 70.0, 71.0, 72.0, 73.0,
-                   74.0,
-                   75.0, 76.0, 77.0, 78.0, 79.0, 80.0, 81.0, 82.0, 83.0, 84.0, 85.0, 86.0, 87.0, 88.0, 89.0, 90.0, 91.0,
-                   92.0,
-                   93.0, 94.0, 95.0, 96.0, 97.0, 98.0, 99.0, 100.0]
-    expectedOutput_first = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                            1, 1, 1, 1, 1, 1]
-    expectedOutput_second = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                             0, 0, 0, 0, 0, 0, 0, 0]
-    FirstDrev = first_derivative(InputSignal)
-    SecondDrev = second_derivative(InputSignal)
-    if ((len(FirstDrev) != len(expectedOutput_first)) or (len(SecondDrev) != len(expectedOutput_second))):
-        print("mismatch in length")
-        return
-    first = second = True
-    for i in range(len(expectedOutput_first)):
-        if abs(FirstDrev[i] - expectedOutput_first[i]) < 0.01:
-            continue
-        else:
-            first = False
-            print("1st derivative wrong")
+    def time_domain(self):
+        operation = simpledialog.askstring("Select number of operation", """
+                                   1- Sharpening Signal
+                                   2- Shift Signal
+                                   3- Fold Signal
+                                   4- Shift Folding Signal:""")
+        if operation not in ['1', '2', '3', '4']:
+            messagebox.showerror("Error", "Invalid selection. Please select option.")
             return
-    for i in range(len(expectedOutput_second)):
-        if abs(SecondDrev[i] - expectedOutput_second[i]) < 0.01:
-            continue
-        else:
-            second = False
-            print("2nd derivative wrong")
-            return
-    if (first and second):
-        print("Derivative Test case passed successfully")
-    else:
-        print("Derivative Test case failed")
-    return FirstDrev, SecondDrev
+        if operation == '1':
+            DerivativeSignal()
+        elif operation == '2':
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            k = int(self.get_user_input("Enter number of shifts 'k': "))
+            shifted_times, shifted_signal = shift_signal(all_times, signal, k)
+            SignalSamplesAreEqual(shifted_times, shifted_signal)
+            plt.figure(figsize=(12, 6))
+            # Original Signal
+            plt.subplot(2, 1, 1)
+            plt.plot(signal, color='blue', label='Original Signal')
+            plt.title('Original Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+
+            plt.subplot(2, 1, 2)
+            plt.plot(shifted_signal, color='red', label='Shifted Signal')
+            plt.title('Shift by K of the Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
+
+
+        elif operation == '3':
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            folded_times, folded_signal = fold_signal(all_times, signal)
+            SignalSamplesAreEqual(folded_times, folded_signal)
+            plt.figure(figsize=(12, 6))
+
+            # Original Signal
+            plt.subplot(2, 1, 1)
+            plt.plot(signal, color='blue', label='Original Signal')
+            plt.title('Original Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+
+            plt.subplot(2, 1, 2)
+            plt.plot(folded_signal, color='red', label='Folded Signal')
+            plt.title('Folded Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
+
+
+        elif operation == '4':
+            # Fold the signal first
+            all_times, signals = self.read_signals_from_txt_files()
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+                return
+            signal = signals[0]
+            # Ask user for the number of shifts
+            k = int(self.get_user_input("Enter number of shifts 'k': "))
+            # Shift the folded signal
+            shifted_times, shifted_folded_signal = fold_and_shift_signal(all_times, signal, k)
+            int_times = np.round(shifted_times).astype(int)
+            int_signals = np.round(shifted_folded_signal).astype(int)
+            Shift_Fold_Signal(int_times, int_signals)
+            plt.figure(figsize=(12, 6))
+
+            # Original Signal
+            plt.subplot(2, 1, 1)
+            plt.plot(signal, color='blue', label='Original Signal')
+            plt.title('Original Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+
+            plt.subplot(2, 1, 2)
+            plt.plot(int_times, int_signals, color='red', label=' Shifted-Folded Signal')
+            plt.title(' Shifted-Folded Signal')
+            plt.xlabel('Index')
+            plt.ylabel('Amplitude')
+            plt.grid()
+            plt.legend()
+            plt.tight_layout()
+            plt.show()
 
 
 def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
@@ -1029,6 +997,163 @@ def compute_dct(signal, m):
             f.write(f"{value}\n")
     print(f"The first {m} DCT coefficients have been saved to 'dct_coefficients.txt'.")
     return dct_result
+
+
+import matplotlib.pyplot as plt
+
+
+def DerivativeSignal():
+    # Input signal
+    InputSignal = [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
+        39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+        57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
+        75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92,
+        93, 94, 95, 96, 97, 98, 99, 100
+    ]
+
+    # Expected outputs
+    expectedOutput_first = [1] * 99
+    expectedOutput_second = [0] * 98
+
+    """
+    Start: Your Code Here
+    """
+
+    # First Derivative Calculation
+    FirstDrev = [InputSignal[i] - InputSignal[i - 1] for i in range(1, len(InputSignal))]
+
+    # Second Derivative Calculation
+    SecondDrev = [InputSignal[i + 1] - 2 * InputSignal[i] + InputSignal[i - 1] for i in range(1, len(InputSignal) - 1)]
+
+    """
+    End
+    """
+
+    # Testing the Code
+    if len(FirstDrev) != len(expectedOutput_first) or len(SecondDrev) != len(expectedOutput_second):
+        print("Mismatch in length")
+        return
+
+    first = second = True
+    for i in range(len(expectedOutput_first)):
+        if abs(FirstDrev[i] - expectedOutput_first[i]) < 0.01:
+            continue
+        else:
+            first = False
+            print("1st derivative wrong")
+            return
+
+    for i in range(len(expectedOutput_second)):
+        if abs(SecondDrev[i] - expectedOutput_second[i]) < 0.01:
+            continue
+        else:
+            second = False
+            print("2nd derivative wrong")
+            return
+
+    if first and second:
+        print("Derivative Test case passed successfully")
+    else:
+        print("Derivative Test case failed")
+        return
+
+    # Plotting the Original Signal, First Derivative, and Second Derivative
+    plt.figure(figsize=(12, 6))
+
+    # Original Signal
+    plt.subplot(3, 1, 1)
+    plt.plot(InputSignal, color='blue', label='Original Signal')
+    plt.title('Original Signal')
+    plt.xlabel('Index')
+    plt.ylabel('Amplitude')
+    plt.grid()
+    plt.legend()
+
+    # First Derivative
+    plt.subplot(3, 1, 2)
+    plt.plot(FirstDrev, color='red', label='First Derivative')
+    plt.title('First Derivative of the Signal')
+    plt.xlabel('Index')
+    plt.ylabel('Amplitude')
+    plt.grid()
+    plt.legend()
+
+    # Second Derivative
+    plt.subplot(3, 1, 3)
+    plt.plot(SecondDrev, color='green', label='Second Derivative')
+    plt.title('Second Derivative of the Signal')
+    plt.xlabel('Index')
+    plt.ylabel('Amplitude')
+    plt.grid()
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    return
+
+
+def shift_signal(indices, signal, k):
+    n = len(indices)
+    shifted_signal = signal[:]  # Keep the signal (Y-values) the same
+    shifted_indices = [0] * n  # Initialize the list with zeros
+
+    if k < 0:  # Right shift (delay)
+        for i in range(n):
+            new_index = i + k
+            if new_index < n and new_index >= 0:
+                shifted_indices[new_index] = indices[i]  # Assign the original index to the new shifted index
+            else:
+                shifted_indices[i] = 0  # Or use any default value for out-of-range indices
+
+    elif k > 0:  # Left shift (advance)
+        for i in range(n):
+            new_index = i - k
+            if new_index >= 0 and new_index < n:
+                shifted_indices[new_index] = indices[i]  # Assign the original index to the new shifted index
+            else:
+                shifted_indices[i] = 0  # Or use any default value for out-of-range indices
+
+    return shifted_indices, shifted_signal  # Return the shifted indices with the original signal
+
+
+def fold_signal(all_times, signal):
+    n = len(signal)
+    folded_signal = [0] * n
+    folded_times = all_times[:]  # Make a copy of the time indices
+
+    for i in range(n):
+        folded_signal[i] = signal[n - 1 - i]  # Reverse the signal values
+        folded_times[i] = all_times[n - 1 - i]  # Reverse the time indices accordingly
+
+    return folded_times, folded_signal  # Return both the time indices and the folded signal
+
+
+def fold_and_shift_signal(indices, signal, k):
+    n = len(indices)
+
+    # Step 1: Fold the signal (reverse both signal and indices)
+    folded_indices = indices[::-1]
+    folded_signal = signal[::-1]
+
+    # Step 2: Shift the folded signal (Right shift for k > 0, Left shift for k < 0)
+    shifted_indices = []
+    shifted_signal = []
+
+    for i in range(n):
+        new_index = folded_indices[i] + k  # Shift index right if k > 0, left if k < 0
+
+        # Include all shifted indices, not restricting to the original min and max
+        shifted_indices.append(new_index)
+        shifted_signal.append(folded_signal[i])
+
+    # Sort the result based on shifted indices for correct ordering
+    sorted_pairs = sorted(zip(shifted_indices, shifted_signal))
+    shifted_indices = [pair[0] for pair in sorted_pairs]
+
+    return shifted_indices, shifted_signal
 
 
 root = tk.Tk()
