@@ -7,9 +7,6 @@ from tkinter import messagebox, simpledialog
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import make_interp_spline
-
-
-# Quantization Test
 def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -54,8 +51,6 @@ def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
                 "QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one")
             return
     print("QuantizationTest1 Test case passed successfully")
-
-
 def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedValues, Your_SampledError):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -118,10 +113,6 @@ def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedVa
             print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one")
             return
     print("QuantizationTest2 Test case passed successfully")
-
-
-# read signal from signal1.txt and ignoring the first 3 rows and read only the signal values
-# generate sin/cos waves and t=(n/Fs) is x-axis and signal is y-axis
 def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, duration=1):
     num_samples = int(f_sampling * duration)
     samples = np.arange(num_samples)
@@ -131,55 +122,44 @@ def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, d
     elif signal_type == "cosine":
         signal = amplitude * np.cos(2 * np.pi * f_analog * t + phase_shift)
     return t, signal
-
-
 def SignalSamplesAreEqual(indices, samples):
-    try:
-        # Open a file dialog to select the comparison file
         root = tk.Tk()
         root.withdraw()  # Hide the root window
 
-        file_path = filedialog.askopenfilename(title="Select the file to compare",
-                                               filetypes=[("Text files", ".txt"), ("All files", ".*")])
+        file_name = filedialog.askopenfilename(title="Select the file to compare",filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
-        if not file_path:
+        if not file_name:
             print("No file selected.")
             return
-
-        # Read expected indices and samples from the selected file
         expected_indices = []
         expected_samples = []
-        with open(file_path, 'r') as f:
-            # Skipping the first 3 lines (headers)
-            for _ in range(4):
-                line = f.readline()
-
-            # Reading the signal values
+        with open(file_name, 'r') as f:
+            line = f.readline()
+            line = f.readline()
+            line = f.readline()
+            line = f.readline()
             while line:
+                # process line
                 L = line.strip()
-                if len(L.split()) == 2:
-                    V1, V2 = L.split()
-                    expected_indices.append(int(V1))
-                    expected_samples.append(float(V2))
-                line = f.readline()
-
-        # Compare lengths
+                if len(L.split(' ')) == 2:
+                    L = line.split(' ')
+                    V1 = int(L[0])
+                    V2 = float(L[1])
+                    expected_indices.append(V1)
+                    expected_samples.append(V2)
+                    line = f.readline()
+                else:
+                    break
         if len(expected_samples) != len(samples):
-            print("Test case failed, your signal has a different length from the expected one.")
+            print("Test case failed, your signal have different length from the expected one")
             return
-
-        # Compare values
         for i in range(len(expected_samples)):
-            if abs(samples[i] - expected_samples[i]) >= 0.01:
-                print("Test case failed, your signal has different values from the expected one.")
+            if abs(samples[i] - expected_samples[i]) < 0.01:
+                continue
+            else:
+                print("Test case failed, your signal have different values from the expected one")
                 return
-
-        print("Test case passed successfully!")
-
-    except Exception as e:
-        print(f"Error: {e}")
-
-
+        print("Test case passed successfully")
 def Shift_Fold_Signal(Your_indices, Your_samples):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -223,8 +203,6 @@ def Shift_Fold_Signal(Your_indices, Your_samples):
             print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one")
             return
     print("Shift_Fold_Signal Test case passed successfully")
-
-
 class SignalPlotApp:
     def __init__(self, root):
         self.root = root
@@ -247,63 +225,98 @@ class SignalPlotApp:
         # Create buttons with specified width and padding
         button_width = 15  # Set a fixed width for buttons
 
-        self.discrete_button = tk.Button(self.button_frame, text="Read Signal", command=self.plot_both_signals,
-                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.discrete_button = tk.Button(self.button_frame, text="Read Signal", command=self.plot_both_signals,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.discrete_button.grid(row=0, column=0, padx=10, pady=10)
 
-        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,
-                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.generate_button.grid(row=0, column=1, padx=10, pady=10)
 
-        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1",
-                                    fg="black", font=7, width=button_width)
+        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1",fg="black", font=7, width=button_width)
         self.add_button.grid(row=0, column=2, padx=10, pady=10)
 
-        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,
-                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.subtract_button.grid(row=0, column=3, padx=10, pady=10)
 
-        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,
-                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.multiply_button.grid(row=0, column=4, padx=10, pady=10)
 
-        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,
-                                       bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.square_button.grid(row=0, column=5, padx=10, pady=10)
 
-        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,
-                                          bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.normalize_button.grid(row=1, column=0, padx=10, pady=10)
 
-        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,
-                                           bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.accumulate_button.grid(row=1, column=1, padx=10, pady=10)
 
-        self.quantize_button = tk.Button(self.button_frame, text="Quantize Signal", command=self.quantize_signal,
-                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.quantize_button = tk.Button(self.button_frame, text="Quantize Signal", command=self.quantize_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.quantize_button.grid(row=1, column=2, padx=10, pady=10)
 
         # Add Frequency Domain button
-        self.frequency_button = tk.Button(self.button_frame, text="Frequency Domain",
-                                          command=self.show_frequency_options,
-                                          bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.frequency_button = tk.Button(self.button_frame, text="Frequency Domain",command=self.show_frequency_options,bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.frequency_button.grid(row=1, column=3, padx=10, pady=10)
-        self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain,
-                                     bg="#ccbeb1", fg="black", font=7, width=button_width)
-        self.time_domain.grid(row=1, column=2, padx=10, pady=10)
+        self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.time_domain.grid(row=1, column=4, padx=10, pady=10)
+
+        self.convolution = tk.Button(self.button_frame, text="Convolution", command=self.convolution_action, bg="#ccbeb1",fg="black", font=7, width=button_width)
+        self.convolution.grid(row=1, column=5, padx=10, pady=10)
+
+        self.correlation = tk.Button(self.button_frame, text="Correlation", command=self.corr_action,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.correlation.grid(row=2, column=0, padx=10, pady=10)
 
         self.button_frame.pack_propagate(False)
-
         self.canvas = None
 
+    # def read_signals_from_txt_files(self):
+    #     try:
+    #         root = tk.Tk()
+    #         root.withdraw()  # Hide the root window
+    #
+    #         # Allow selection of one or more files
+    #         file_paths = filedialog.askopenfilenames(title="Select one or more files",filetypes=[("Text files", ".txt"), ("All files", ".*")])
+    #
+    #         if not file_paths:
+    #             print("No file selected.")
+    #             return None, None
+    #
+    #         signals = []
+    #         all_indices = []
+    #
+    #         for file_path in file_paths:
+    #             # Load both indices (first column) and signal values (second column)
+    #             data = np.loadtxt(file_path, skiprows=3, usecols=(0, 1))
+    #             indices = data[:, 0]  # First column for indices
+    #             signal = data[:, 1]  # Second column for signal values
+    #             all_indices.append(indices)
+    #             signals.append(signal)
+    #
+    #         if signals:
+    #             # Merge all indices, ensuring that we have a union of all index points
+    #             unified_indices = np.unique(np.concatenate(all_indices))
+    #
+    #             # Pad and align each signal to the unified set of indices
+    #             aligned_signals = []
+    #             for i, indices in enumerate(all_indices):
+    #                 # Find where the original indices fit in the unified indices
+    #                 aligned_signal = np.zeros_like(unified_indices, dtype=float)
+    #                 idx_in_unified = np.searchsorted(unified_indices, indices)
+    #                 aligned_signal[idx_in_unified] = signals[i]
+    #                 aligned_signals.append(aligned_signal)
+    #
+    #             return unified_indices, aligned_signals  # Return the aligned signals
+    #
+    #         return None, None
+    #
+    #     except Exception as e:
+    #         print(f"Error reading file: {e}")
+    #         return None, None
     def read_signals_from_txt_files(self):
         try:
             root = tk.Tk()
             root.withdraw()  # Hide the root window
 
             # Allow selection of one or more files
-            file_paths = filedialog.askopenfilenames(title="Select one or more files",
-                                                     filetypes=[("Text files", ".txt"), ("All files", ".*")])
+            file_paths = filedialog.askopenfilenames(title="Select one or more files",filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
             if not file_paths:
                 print("No file selected.")
@@ -320,22 +333,7 @@ class SignalPlotApp:
                 all_indices.append(indices)
                 signals.append(signal)
 
-            if signals:
-                # Merge all indices, ensuring that we have a union of all index points
-                unified_indices = np.unique(np.concatenate(all_indices))
-
-                # Pad and align each signal to the unified set of indices
-                aligned_signals = []
-                for i, indices in enumerate(all_indices):
-                    # Find where the original indices fit in the unified indices
-                    aligned_signal = np.zeros_like(unified_indices, dtype=float)
-                    idx_in_unified = np.searchsorted(unified_indices, indices)
-                    aligned_signal[idx_in_unified] = signals[i]
-                    aligned_signals.append(aligned_signal)
-
-                return unified_indices, aligned_signals  # Return the aligned signals
-
-            return None, None
+            return all_indices, signals  # Return the indices and signals for all selected files
 
         except Exception as e:
             print(f"Error reading file: {e}")
@@ -361,7 +359,7 @@ class SignalPlotApp:
             fig = plt.Figure(figsize=(10, 8))
             ax1 = fig.add_subplot(211)
             ax2 = fig.add_subplot(212)
-
+            indices = indices[0]
             # Plot the first signal using spline interpolation for smooth plotting
             signal1 = signals[0]
             smooth_x = np.linspace(indices.min(), indices.max(), 500)
@@ -424,7 +422,7 @@ class SignalPlotApp:
         try:
             result = np.square(signal)
             SignalSamplesAreEqual(indices, result)
-            self.plot_signal(indices, result, title="Squared Signal")
+            self.plot_signal(indices[0], result, title="Squared Signal")
         except ValueError as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
@@ -464,7 +462,7 @@ class SignalPlotApp:
                 return
 
             SignalSamplesAreEqual(indices, result)
-            self.plot_signal(indices, result, title=f"Normalized Signal ({normalization_type} to 1)")
+            self.plot_signal(indices[0], result, title=f"Normalized Signal ({normalization_type} to 1)")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
@@ -483,7 +481,7 @@ class SignalPlotApp:
 
         # Save the result and plot it
         SignalSamplesAreEqual(indices, result)
-        self.plot_signal(indices, result, title="Accumulated Signal")
+        self.plot_signal(indices[0], result, title="Accumulated Signal")
 
     def generate_user_signal(self):
         try:
@@ -506,7 +504,7 @@ class SignalPlotApp:
         if signals:
             result = np.sum(signals, axis=0)
             SignalSamplesAreEqual(indices, result)
-            self.plot_signal(indices, result, title="Added Signals")
+            self.plot_signal(indices[0], result, title="Added Signals")
 
     def subtract_signals(self):
         # Read signals from two different files
@@ -526,7 +524,7 @@ class SignalPlotApp:
         SignalSamplesAreEqual(indices, result)
 
         # Plot the result of subtraction
-        self.plot_signal(indices, result, title="Subtracted Signals")
+        self.plot_signal(indices[0], result, title="Subtracted Signals")
 
     def multiply_signal(self):
         indices, signals = self.read_signals_from_txt_files()
@@ -546,7 +544,7 @@ class SignalPlotApp:
             result = signal * multiplier
             # Save the result and plot it
             SignalSamplesAreEqual(indices, result)
-            self.plot_signal(indices, result, title=f"Signal Multiplied by {multiplier}")
+            self.plot_signal(indices[0], result, title=f"Signal Multiplied by {multiplier}")
 
         except ValueError:
             messagebox.showerror("Input Error", "Please enter a valid number for the multiplier.")
@@ -581,7 +579,8 @@ class SignalPlotApp:
         if signals is None or len(signals) != 1:
             messagebox.showerror("Input Error", "Please select exactly one signal file for quantization.")
             return
-        signal = signals[0]  # Get the first (and only) signal
+        signal = signals[0]
+        indices=indices[0]# Get the first (and only) signal
 
         try:
             # Step 2: Ask user for quantization method (levels or bits)
@@ -725,8 +724,11 @@ class SignalPlotApp:
 
     def show_frequency_options(self):
         transform_type = simpledialog.askstring("Select Transform",
-                                                "Enter 'DFT' for Discrete Fourier Transform or 'IDFT' for Inverse Discrete Fourier Transform or 'DCT' for Discrete Cosine Transform :")
-        if transform_type not in ['DFT', 'IDFT', 'DCT']:
+                                                "Enter 'DFT' for Discrete Fourier Transform "
+                                                " 'IDFT' for Inverse Discrete Fourier Transform "
+                                                "'DCT' for Discrete Cosine Transform "
+                                                "'R-DC' for removing DC component")
+        if transform_type not in ['DFT', 'IDFT', 'DCT','R-DC']:
             messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT' or 'DCT'.")
             return
 
@@ -816,9 +818,29 @@ class SignalPlotApp:
             m = int(self.get_user_input("Enter number of DCT coefficients:"))
             signal = signals[0]
             rst = compute_dct(signal, m)
-            self.plot_signal(indeses, rst, "DCT")
-            indeses.fill(0)
-            SignalSamplesAreEqual(indeses, rst)
+            self.plot_signal(indeses[0], rst, "DCT")
+            SignalSamplesAreEqual(indeses[0], rst)
+
+        elif transform_type=='R-DC':
+            indices,signals=self.read_signals_from_txt_files()
+            signal=signals[0]
+            dft_signal = self.fourier_transform(signal)
+
+            # Set the DC component (first frequency component) to zero
+            dft_signal[0] = complex(0, 0)
+            amp = np.array(indices)
+            phase = np.array(signal)
+
+            real_part = amp * np.cos(phase)
+            imaginary_part = amp * np.sin(phase)
+            complex_spectrum = real_part + 1j * imaginary_part
+
+            reconstructed_signal = self.fourier_transform(complex_spectrum, inverse=True)
+            dft_signal = np.round(np.real(reconstructed_signal), decimals=0).tolist()
+
+            # Perform the manual Inverse Discrete Fourier Transform (IDFT) to convert back to the time domain
+            signal_no_dc = dft_signal
+            SignalSamplesAreEqual(indices,signal_no_dc)
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
@@ -843,15 +865,19 @@ class SignalPlotApp:
     def time_domain(self):
         operation = simpledialog.askstring("Select number of operation", """
                                    1- Sharpening Signal
-                                   2- Shift Signal
-                                   3- Fold Signal
-                                   4- Shift Folding Signal:""")
-        if operation not in ['1', '2', '3', '4']:
+                                   2- Smoothing Signal
+                                   3- Shift Signal
+                                   4- Fold Signal
+                                   5- Shift Folding Signal
+                                   6-Remove DC Component""")
+        if operation not in ['1', '2', '3', '4','5','6']:
             messagebox.showerror("Error", "Invalid selection. Please select option.")
             return
         if operation == '1':
             DerivativeSignal()
-        elif operation == '2':
+        elif operation== '2':
+            self.smoothing_action()
+        elif operation == '3':
             all_times, signals = self.read_signals_from_txt_files()
             if signals is None or len(signals) == 0:
                 messagebox.showerror("Error", "No signals read from file.")
@@ -881,12 +907,13 @@ class SignalPlotApp:
             plt.show()
 
 
-        elif operation == '3':
+        elif operation == '4':
             all_times, signals = self.read_signals_from_txt_files()
             if signals is None or len(signals) == 0:
                 messagebox.showerror("Error", "No signals read from file.")
                 return
             signal = signals[0]
+            all_times=all_times[0]
             folded_times, folded_signal = fold_signal(all_times, signal)
             SignalSamplesAreEqual(folded_times, folded_signal)
             plt.figure(figsize=(12, 6))
@@ -911,13 +938,14 @@ class SignalPlotApp:
             plt.show()
 
 
-        elif operation == '4':
+        elif operation == '5':
             # Fold the signal first
             all_times, signals = self.read_signals_from_txt_files()
             if signals is None or len(signals) == 0:
                 messagebox.showerror("Error", "No signals read from file.")
                 return
             signal = signals[0]
+            all_times=all_times[0]
             # Ask user for the number of shifts
             k = int(self.get_user_input("Enter number of shifts 'k': "))
             # Shift the folded signal
@@ -945,8 +973,63 @@ class SignalPlotApp:
             plt.legend()
             plt.tight_layout()
             plt.show()
+        elif operation=='6':
+            indises,signals=self.read_signals_from_txt_files()
+            signal=signals[0]
+            dc_removed =remove_dc_time_domain(signal)
+            SignalSamplesAreEqual(indises,dc_removed)
+    def smoothing_action(self):
+        try:
+            # Use your `reed` function to browse and read the signal
+            indices, signals = self.read_signals_from_txt_files()  # Assuming this reads the signal as a list or numpy array
+            signal=signals[0]
+            # Ask the user for the window size
+            window_size = simpledialog.askinteger("Input", "Enter window size for smoothing:")
+            if window_size is None:  # If the user cancels
+                return
+
+            # Smooth the signal
+            smoothed_signal = smooth_signal(signal, window_size)
+            SignalSamplesAreEqual(indices,smoothed_signal)
+
+            # Display the result (or pass it to your framework for further processing)
+            messagebox.showinfo("Smoothing Complete", "The signal has been smoothed.")
+            # print("Smoothed Signal:", smoothed_signal)
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+    def convolution_action(self):
+        try:
+            # Read signals from files
+            all_indices, all_signals = self.read_signals_from_txt_files()
+            if all_signals is None or len(all_signals) < 2:
+                messagebox.showerror("Error", "Please select at least two signals.")
+                return
+
+            # Extract the first and second signals and their indices
+            signal1 = all_signals[0]
+            indices1 = all_indices[0]
+            signal2 = all_signals[1]
+            indices2 = all_indices[1]
+
+            convolved_indices, convolved_signal = convolve_signals(indices1,signal1,indices2,signal2)
+            ConvTest(convolved_indices,convolved_signal)
+
+            # Display the results
 
 
+            # Show completion message
+            messagebox.showinfo("Convolution Complete", "Signals have been convolved successfully.")
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+    def corr_action(self):
+        indices,signals=self.read_signals_from_txt_files()
+        signal1=signals[0]
+        signal2=signals[1]
+        c_signal=normalized_cross_correlation(signal1,signal2)
+        print(c_signal)
+        SignalSamplesAreEqual(indices[0],c_signal)
 def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
     if len(SignalInput) != len(SignalOutput):
         return False
@@ -954,15 +1037,11 @@ def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
         if abs(SignalInput[i] - SignalOutput[i]) > 0.001:
             return False
     return True
-
-
 # Function to round phase shift
 def RoundPhaseShift(P):
     while P < 0:
         P += 2 * math.pi
     return float(P % (2 * math.pi))
-
-
 # Function to compare phase shifts
 def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
     if len(SignalInput) != len(SignalOutput):
@@ -973,8 +1052,6 @@ def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
         if abs(A - B) > 0.0001:
             return False
     return True
-
-
 def custom_cumsum(signal):
     csum_result = []
     running_total = 0  # Initialize the running total to 0
@@ -984,8 +1061,6 @@ def custom_cumsum(signal):
         csum_result.append(running_total)  # Store the running total in the result list
 
     return np.array(csum_result)  # Convert the list to a NumPy array for consistency
-
-
 def compute_dct(signal, m):
     N = len(signal)
     dct_result = [
@@ -997,11 +1072,6 @@ def compute_dct(signal, m):
             f.write(f"{value}\n")
     print(f"The first {m} DCT coefficients have been saved to 'dct_coefficients.txt'.")
     return dct_result
-
-
-import matplotlib.pyplot as plt
-
-
 def DerivativeSignal():
     # Input signal
     InputSignal = [
@@ -1093,8 +1163,6 @@ def DerivativeSignal():
     plt.show()
 
     return
-
-
 def shift_signal(indices, signal, k):
     n = len(indices)
     shifted_signal = signal[:]  # Keep the signal (Y-values) the same
@@ -1117,20 +1185,11 @@ def shift_signal(indices, signal, k):
                 shifted_indices[i] = 0  # Or use any default value for out-of-range indices
 
     return shifted_indices, shifted_signal  # Return the shifted indices with the original signal
+def fold_signal(indices, signal):
+    folded_indices = indices[::-1]  # Reverse the indices
+    folded_signal = signal[::-1]  #
 
-
-def fold_signal(all_times, signal):
-    n = len(signal)
-    folded_signal = [0] * n
-    folded_times = all_times[:]  # Make a copy of the time indices
-
-    for i in range(n):
-        folded_signal[i] = signal[n - 1 - i]  # Reverse the signal values
-        folded_times[i] = all_times[n - 1 - i]  # Reverse the time indices accordingly
-
-    return folded_times, folded_signal  # Return both the time indices and the folded signal
-
-
+    return folded_indices, folded_signal  # Return both the time indices and the folded signal
 def fold_and_shift_signal(indices, signal, k):
     n = len(indices)
 
@@ -1154,7 +1213,110 @@ def fold_and_shift_signal(indices, signal, k):
     shifted_indices = [pair[0] for pair in sorted_pairs]
 
     return shifted_indices, shifted_signal
+def smooth_signal(signal, window_size):
+    if window_size < 2 or len(signal) <= window_size:
+        raise ValueError("Window size must be greater than 1 and signal length must be greater than window size")
 
+    smoothed_signal = []  # This will store the output signal
+    half_window = window_size // 2  # Calculate half the window size
+
+    # Iterate over the signal starting from index `half_window` to len(x) - half_window
+    for n in range(half_window, len(signal) - half_window):
+        # Compute the average of the window centered at x[n]
+        avg = sum(signal[n - half_window:n + half_window + 1]) / window_size
+        smoothed_signal.append(avg)
+
+    return smoothed_signal
+def remove_dc_time_domain(signal):
+
+    # Manually compute the mean (DC component) of the signal
+    sum_signal = sum(signal)
+    n = len(signal)
+    dc_component = sum_signal / n  # Calculate the mean
+
+    # Subtract the DC component from each element in the signal
+    signal_no_dc = [x - dc_component for x in signal]
+
+    return signal_no_dc
+def convolve_signals(indices1, signal1, indices2, signal2):
+    # Convert indices to integers if they are numpy.float64
+    indices1 = np.array(indices1, dtype=int)
+    indices2 = np.array(indices2, dtype=int)
+
+    start_index = indices1[0] + indices2[0]
+    end_index = indices1[-1] + indices2[-1]
+
+    # Initialize an empty list for the result signal
+    convolved_signal = []
+
+    # Iterate over each possible index in the output signal
+    for n in range(start_index, end_index + 1):
+        conv_value = 0
+        # Compute the sum for the convolution at index n
+        for i in range(len(indices1)):
+            for j in range(len(indices2)):
+                if n == indices1[i] + indices2[j]:
+                    conv_value += signal1[i] * signal2[j]
+        convolved_signal.append(conv_value)
+
+    # Create the corresponding indices for the convolved signal
+    convolved_indices = list(range(start_index, end_index + 1))
+
+    return convolved_indices, convolved_signal
+def ConvTest(Your_indices, Your_samples):
+    """
+    Test inputs
+    InputIndicesSignal1 =[-2, -1, 0, 1]
+    InputSamplesSignal1 = [1, 2, 1, 1 ]
+
+    InputIndicesSignal2=[0, 1, 2, 3, 4, 5 ]
+    InputSamplesSignal2 = [ 1, -1, 0, 0, 1, 1 ]
+    """
+    expected_indices = [-2, -1, 0, 1, 2, 3, 4, 5, 6]
+    expected_samples = [1, 1, -1, 0, 0, 3, 3, 2, 1]
+
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        print("Conv Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if (Your_indices[i] != expected_indices[i]):
+            print("Conv Test case failed, your signal have different indicies from the expected one")
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Conv Test case failed, your signal have different values from the expected one")
+            return
+    print("Conv Test case passed successfully")
+def normalized_cross_correlation(signal1, signal2):
+    N = len(signal1)
+    res = []  # List to store results
+
+    # Loop over all possible shifts in reverse order (from N-1 to 0)
+    for shift in range(N):  # Starts from N-1 and ends at 0
+        r12 = 0
+        d1 = 0
+        d2 = 0
+
+        # Shift signal2 using np.roll
+        rolled_signal2 = np.roll(signal2, shift) # x2(i+ or - n)
+
+        # Compute r12 (cross-correlation), d1, and d2 for the current shift
+        for i in range(N):
+            r12 += signal1[i] * rolled_signal2[i]
+            d1 += signal1[i] * signal1[i]
+            d2 += rolled_signal2[i] * rolled_signal2[i]
+
+        # Normalize r12 by N
+        r12 /= N
+
+        # Calculate denominator
+        denominator = np.sqrt(d1 * d2) / N
+
+        # Compute the normalized cross-correlation for this shift
+        res.append(r12 / denominator)
+    return res
 
 root = tk.Tk()
 app = SignalPlotApp(root)
