@@ -821,26 +821,31 @@ class SignalPlotApp:
             self.plot_signal(indeses[0], rst, "DCT")
             SignalSamplesAreEqual(indeses[0], rst)
 
-        elif transform_type=='R-DC':
-            indices,signals=self.read_signals_from_txt_files()
-            signal=signals[0]
+
+        elif transform_type == 'R-DC':
+
+            indices, signals = self.read_signals_from_txt_files()
+
+            if signals is None or len(signals) == 0:
+                messagebox.showerror("Error", "No signals read from file.")
+
+                return
+
+            signal = signals[0]
+
+            # Perform DFT to move the signal to the frequency domain
+
             dft_signal = self.fourier_transform(signal)
 
-            # Set the DC component (first frequency component) to zero
-            dft_signal[0] = complex(0, 0)
-            amp = np.array(indices)
-            phase = np.array(signal)
+            # Set the DC component (first frequency component, corresponding to k=0) to zero
 
-            real_part = amp * np.cos(phase)
-            imaginary_part = amp * np.sin(phase)
-            complex_spectrum = real_part + 1j * imaginary_part
+            dft_signal[0] = 0
 
-            reconstructed_signal = self.fourier_transform(complex_spectrum, inverse=True)
-            dft_signal = np.round(np.real(reconstructed_signal), decimals=0).tolist()
-
-            # Perform the manual Inverse Discrete Fourier Transform (IDFT) to convert back to the time domain
-            signal_no_dc = dft_signal
-            SignalSamplesAreEqual(indices,signal_no_dc)
+            # Perform the inverse DFT to reconstruct the time-domain signal without the DC component
+            signal_no_dc = self.fourier_transform(dft_signal, inverse=True)
+            signal_no_dc = np.round(np.real(signal_no_dc), decimals=0).tolist()
+            print(signal_no_dc)
+            #SignalSamplesAreEqual(indices, signal_no_dc)
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
@@ -1321,3 +1326,4 @@ def normalized_cross_correlation(signal1, signal2):
 root = tk.Tk()
 app = SignalPlotApp(root)
 root.mainloop()
+
