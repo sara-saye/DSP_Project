@@ -7,6 +7,8 @@ from tkinter import messagebox, simpledialog
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import make_interp_spline
+
+
 def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -51,6 +53,8 @@ def QuantizationTest1(Your_EncodedValues, Your_QuantizedValues):
                 "QuantizationTest1 Test case failed, your QuantizedValues have different values from the expected one")
             return
     print("QuantizationTest1 Test case passed successfully")
+
+
 def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedValues, Your_SampledError):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -113,6 +117,8 @@ def QuantizationTest2(Your_IntervalIndices, Your_EncodedValues, Your_QuantizedVa
             print("QuantizationTest2 Test case failed, your SampledError have different values from the expected one")
             return
     print("QuantizationTest2 Test case passed successfully")
+
+
 def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, duration=1):
     num_samples = int(f_sampling * duration)
     samples = np.arange(num_samples)
@@ -122,44 +128,94 @@ def generate_signal(signal_type, amplitude, phase_shift, f_analog, f_sampling, d
     elif signal_type == "cosine":
         signal = amplitude * np.cos(2 * np.pi * f_analog * t + phase_shift)
     return t, signal
+
+
 def SignalSamplesAreEqual(indices, samples):
-        root = tk.Tk()
-        root.withdraw()  # Hide the root window
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
 
-        file_name = filedialog.askopenfilename(title="Select the file to compare",filetypes=[("Text files", ".txt"), ("All files", ".*")])
+    file_name = filedialog.askopenfilename(title="Select the file to compare",
+                                           filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
-        if not file_name:
-            print("No file selected.")
-            return
-        expected_indices = []
-        expected_samples = []
-        with open(file_name, 'r') as f:
-            line = f.readline()
-            line = f.readline()
-            line = f.readline()
-            line = f.readline()
-            while line:
-                # process line
-                L = line.strip()
-                if len(L.split(' ')) == 2:
-                    L = line.split(' ')
-                    V1 = int(L[0])
-                    V2 = float(L[1])
-                    expected_indices.append(V1)
-                    expected_samples.append(V2)
-                    line = f.readline()
-                else:
-                    break
-        if len(expected_samples) != len(samples):
-            print("Test case failed, your signal have different length from the expected one")
-            return
-        for i in range(len(expected_samples)):
-            if abs(samples[i] - expected_samples[i]) < 0.01:
-                continue
+    if not file_name:
+        print("No file selected.")
+        return
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L = line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
             else:
-                print("Test case failed, your signal have different values from the expected one")
-                return
-        print("Test case passed successfully")
+                break
+    if len(expected_samples) != len(samples):
+        print("Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(expected_samples)):
+        if abs(samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Test case failed, your signal have different values from the expected one")
+            return
+    print("Test case passed successfully")
+
+
+def Compare_Signals(Your_indices, Your_samples):  # for FIR Filter
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+
+    file_name = filedialog.askopenfilename(title="Select the file to compare",
+                                           filetypes=[("Text files", ".txt"), ("All files", ".*")])
+
+    if not file_name:
+        print("No file selected.")
+        return
+    expected_indices = []
+    expected_samples = []
+    with open(file_name, 'r') as f:
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        line = f.readline()
+        while line:
+            # process line
+            L = line.strip()
+            if len(L.split(' ')) == 2:
+                L = line.split(' ')
+                V1 = int(L[0])
+                V2 = float(L[1])
+                expected_indices.append(V1)
+                expected_samples.append(V2)
+                line = f.readline()
+            else:
+                break
+    if (len(expected_samples) != len(Your_samples)) and (len(expected_indices) != len(Your_indices)):
+        print("Test case failed, your signal have different length from the expected one")
+        return
+    for i in range(len(Your_indices)):
+        if (Your_indices[i] != expected_indices[i]):
+            print("Test case failed, your signal have different indicies from the expected one")
+            return
+    for i in range(len(expected_samples)):
+        if abs(Your_samples[i] - expected_samples[i]) < 0.01:
+            continue
+        else:
+            print("Test case failed, your signal have different values from the expected one")
+            return
+    print("Test case passed successfully")
+
+
 def Shift_Fold_Signal(Your_indices, Your_samples):
     root = tk.Tk()
     root.withdraw()  # Hide the main tkinter window
@@ -203,6 +259,8 @@ def Shift_Fold_Signal(Your_indices, Your_samples):
             print("Shift_Fold_Signal Test case failed, your signal have different values from the expected one")
             return
     print("Shift_Fold_Signal Test case passed successfully")
+
+
 class SignalPlotApp:
     def __init__(self, root):
         self.root = root
@@ -225,98 +283,70 @@ class SignalPlotApp:
         # Create buttons with specified width and padding
         button_width = 15  # Set a fixed width for buttons
 
-        self.discrete_button = tk.Button(self.button_frame, text="Read Signal", command=self.plot_both_signals,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.discrete_button = tk.Button(self.button_frame, text="Read Signal", command=self.plot_both_signals,
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.discrete_button.grid(row=0, column=0, padx=10, pady=10)
 
-        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.generate_button = tk.Button(self.button_frame, text="Generate Signal", command=self.open_generate_window,
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.generate_button.grid(row=0, column=1, padx=10, pady=10)
 
-        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1",fg="black", font=7, width=button_width)
+        self.add_button = tk.Button(self.button_frame, text="Add Signals", command=self.add_signals, bg="#ccbeb1",
+                                    fg="black", font=7, width=button_width)
         self.add_button.grid(row=0, column=2, padx=10, pady=10)
 
-        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.subtract_button = tk.Button(self.button_frame, text="Subtract Signals", command=self.subtract_signals,
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.subtract_button.grid(row=0, column=3, padx=10, pady=10)
 
-        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.multiply_button = tk.Button(self.button_frame, text="Multiply Signal", command=self.multiply_signal,
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.multiply_button.grid(row=0, column=4, padx=10, pady=10)
 
-        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.square_button = tk.Button(self.button_frame, text="Square Signal", command=self.square_signal,
+                                       bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.square_button.grid(row=0, column=5, padx=10, pady=10)
 
-        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.normalize_button = tk.Button(self.button_frame, text="Normalize Signal", command=self.normalize_signal,
+                                          bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.normalize_button.grid(row=1, column=0, padx=10, pady=10)
 
-        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.accumulate_button = tk.Button(self.button_frame, text="Accumulate Signal", command=self.accumulate_signal,
+                                           bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.accumulate_button.grid(row=1, column=1, padx=10, pady=10)
 
-        self.quantize_button = tk.Button(self.button_frame, text="Quantize Signal", command=self.quantize_signal,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.quantize_button = tk.Button(self.button_frame, text="Quantize Signal", command=self.quantize_signal,
+                                         bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.quantize_button.grid(row=1, column=2, padx=10, pady=10)
 
         # Add Frequency Domain button
-        self.frequency_button = tk.Button(self.button_frame, text="Frequency Domain",command=self.show_frequency_options,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.frequency_button = tk.Button(self.button_frame, text="Frequency Domain",
+                                          command=self.show_frequency_options, bg="#ccbeb1", fg="black", font=7,
+                                          width=button_width)
         self.frequency_button.grid(row=1, column=3, padx=10, pady=10)
-        self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.time_domain = tk.Button(self.button_frame, text="Time Domain", command=self.time_domain, bg="#ccbeb1",
+                                     fg="black", font=7, width=button_width)
         self.time_domain.grid(row=1, column=4, padx=10, pady=10)
 
-        self.convolution = tk.Button(self.button_frame, text="Convolution", command=self.convolution_action, bg="#ccbeb1",fg="black", font=7, width=button_width)
+        self.convolution = tk.Button(self.button_frame, text="Convolution", command=self.convolution_action,
+                                     bg="#ccbeb1", fg="black", font=7, width=button_width)
         self.convolution.grid(row=1, column=5, padx=10, pady=10)
 
-        self.correlation = tk.Button(self.button_frame, text="Correlation", command=self.corr_action,bg="#ccbeb1", fg="black", font=7, width=button_width)
+        self.correlation = tk.Button(self.button_frame, text="Correlation", command=self.corr_action, bg="#ccbeb1",
+                                     fg="black", font=7, width=button_width)
         self.correlation.grid(row=2, column=0, padx=10, pady=10)
 
         self.button_frame.pack_propagate(False)
         self.canvas = None
 
-    # def read_signals_from_txt_files(self):
-    #     try:
-    #         root = tk.Tk()
-    #         root.withdraw()  # Hide the root window
-    #
-    #         # Allow selection of one or more files
-    #         file_paths = filedialog.askopenfilenames(title="Select one or more files",filetypes=[("Text files", ".txt"), ("All files", ".*")])
-    #
-    #         if not file_paths:
-    #             print("No file selected.")
-    #             return None, None
-    #
-    #         signals = []
-    #         all_indices = []
-    #
-    #         for file_path in file_paths:
-    #             # Load both indices (first column) and signal values (second column)
-    #             data = np.loadtxt(file_path, skiprows=3, usecols=(0, 1))
-    #             indices = data[:, 0]  # First column for indices
-    #             signal = data[:, 1]  # Second column for signal values
-    #             all_indices.append(indices)
-    #             signals.append(signal)
-    #
-    #         if signals:
-    #             # Merge all indices, ensuring that we have a union of all index points
-    #             unified_indices = np.unique(np.concatenate(all_indices))
-    #
-    #             # Pad and align each signal to the unified set of indices
-    #             aligned_signals = []
-    #             for i, indices in enumerate(all_indices):
-    #                 # Find where the original indices fit in the unified indices
-    #                 aligned_signal = np.zeros_like(unified_indices, dtype=float)
-    #                 idx_in_unified = np.searchsorted(unified_indices, indices)
-    #                 aligned_signal[idx_in_unified] = signals[i]
-    #                 aligned_signals.append(aligned_signal)
-    #
-    #             return unified_indices, aligned_signals  # Return the aligned signals
-    #
-    #         return None, None
-    #
-    #     except Exception as e:
-    #         print(f"Error reading file: {e}")
-    #         return None, None
     def read_signals_from_txt_files(self):
         try:
             root = tk.Tk()
             root.withdraw()  # Hide the root window
 
             # Allow selection of one or more files
-            file_paths = filedialog.askopenfilenames(title="Select one or more files",filetypes=[("Text files", ".txt"), ("All files", ".*")])
+            file_paths = filedialog.askopenfilenames(title="Select one or more files",
+                                                     filetypes=[("Text files", ".txt"), ("All files", ".*")])
 
             if not file_paths:
                 print("No file selected.")
@@ -515,9 +545,6 @@ class SignalPlotApp:
             messagebox.showerror("Input Error", "Please select exactly two signal files for subtraction.")
             return
 
-        # Print the signals to check if they are being read correctly
-
-        # Subtract the second signal from the first
         result = np.abs(signals[0] - signals[1])
 
         # Optionally, compare with an expected result if applicable
@@ -580,7 +607,7 @@ class SignalPlotApp:
             messagebox.showerror("Input Error", "Please select exactly one signal file for quantization.")
             return
         signal = signals[0]
-        indices=indices[0]# Get the first (and only) signal
+        indices = indices[0]  # Get the first (and only) signal
 
         try:
             # Step 2: Ask user for quantization method (levels or bits)
@@ -728,7 +755,7 @@ class SignalPlotApp:
                                                 " 'IDFT' for Inverse Discrete Fourier Transform "
                                                 "'DCT' for Discrete Cosine Transform "
                                                 "'R-DC' for removing DC component")
-        if transform_type not in ['DFT', 'IDFT', 'DCT','R-DC']:
+        if transform_type not in ['DFT', 'IDFT', 'DCT', 'R-DC']:
             messagebox.showerror("Error", "Invalid selection. Please enter 'DFT' or 'IDFT' or 'DCT'.")
             return
 
@@ -840,12 +867,11 @@ class SignalPlotApp:
             # Set the DC component (first frequency component, corresponding to k=0) to zero
 
             dft_signal[0] = 0
-
             # Perform the inverse DFT to reconstruct the time-domain signal without the DC component
             signal_no_dc = self.fourier_transform(dft_signal, inverse=True)
             signal_no_dc = np.round(np.real(signal_no_dc), decimals=0).tolist()
             print(signal_no_dc)
-            #SignalSamplesAreEqual(indices, signal_no_dc)
+            # SignalSamplesAreEqual(indices, signal_no_dc)
 
     def plot_frequency_response(self, frequencies, amplitude, phase, original_signal):
         plt.figure(figsize=(12, 8))
@@ -867,6 +893,27 @@ class SignalPlotApp:
         plt.grid()
         plt.show()
 
+    def plot_signals(self, original, processed, original_label, processed_label):
+        plt.figure(figsize=(12, 6))
+        plt.subplot(2, 1, 1)
+        plt.plot(original, color="blue", label=original_label)
+        plt.title(original_label)
+        plt.xlabel("Index")
+        plt.ylabel("Amplitude")
+        plt.grid()
+        plt.legend()
+
+        plt.subplot(2, 1, 2)
+        plt.plot(processed, color="red", label=processed_label)
+        plt.title(processed_label)
+        plt.xlabel("Index")
+        plt.ylabel("Amplitude")
+        plt.grid()
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
     def time_domain(self):
         operation = simpledialog.askstring("Select number of operation", """
                                    1- Sharpening Signal
@@ -874,13 +921,16 @@ class SignalPlotApp:
                                    3- Shift Signal
                                    4- Fold Signal
                                    5- Shift Folding Signal
-                                   6-Remove DC Component""")
-        if operation not in ['1', '2', '3', '4','5','6']:
+                                   6- Remove DC Component
+                                   7- FIR Filter Design
+                                   8- Resampling
+                                   """)
+        if operation not in ['1', '2', '3', '4', '5', '6', '7', '8']:
             messagebox.showerror("Error", "Invalid selection. Please select option.")
             return
         if operation == '1':
             DerivativeSignal()
-        elif operation== '2':
+        elif operation == '2':
             self.smoothing_action()
         elif operation == '3':
             all_times, signals = self.read_signals_from_txt_files()
@@ -918,7 +968,7 @@ class SignalPlotApp:
                 messagebox.showerror("Error", "No signals read from file.")
                 return
             signal = signals[0]
-            all_times=all_times[0]
+            all_times = all_times[0]
             folded_times, folded_signal = fold_signal(all_times, signal)
             SignalSamplesAreEqual(folded_times, folded_signal)
             plt.figure(figsize=(12, 6))
@@ -950,7 +1000,7 @@ class SignalPlotApp:
                 messagebox.showerror("Error", "No signals read from file.")
                 return
             signal = signals[0]
-            all_times=all_times[0]
+            all_times = all_times[0]
             # Ask user for the number of shifts
             k = int(self.get_user_input("Enter number of shifts 'k': "))
             # Shift the folded signal
@@ -978,16 +1028,133 @@ class SignalPlotApp:
             plt.legend()
             plt.tight_layout()
             plt.show()
-        elif operation=='6':
-            indises,signals=self.read_signals_from_txt_files()
-            signal=signals[0]
-            dc_removed =remove_dc_time_domain(signal)
-            SignalSamplesAreEqual(indises,dc_removed)
+        elif operation == '6':
+            indises, signals = self.read_signals_from_txt_files()
+            signal = signals[0]
+            dc_removed = remove_dc_time_domain(signal)
+            SignalSamplesAreEqual(indises, dc_removed)
+        elif operation == '7':
+            self.fir_filter_design()
+        elif operation == '8':
+            self.resample()
+
+    def fir_filter_design(self):
+        # Get values from GUI entries
+        test_cases = int(self.get_user_input("Enter the number of Test Case : "))
+        filter_type = self.get_user_input("Enter filter type (low, high, band_pass, band_stop): ").strip().lower()
+        sampling_freq = int(self.get_user_input("Enter the sampling frequency (Hz): "))
+        stop_atten = int(self.get_user_input("Enter the stopband attenuation (dB): "))
+        transition_band = int(self.get_user_input("Enter the transition band (Hz): "))
+
+        if filter_type in ["low", "high"]:
+            cutoff_freq = int(self.get_user_input("Enter the cutoff frequency (Hz): "))
+            f2 = None  # Not used for these filter types
+        elif filter_type == "band pass":
+            cutoff_freq = int(self.get_user_input("Enter the lower cutoff frequency (Hz): "))
+            f2 = int(self.get_user_input("Enter the upper cutoff frequency (Hz): "))
+        elif filter_type == "band stop":
+            cutoff_freq = int(self.get_user_input("Enter the lower cutoff frequency (Hz): "))
+            f2 = int(self.get_user_input("Enter the upper cutoff frequency (Hz): "))
+        else:
+            raise ValueError("Invalid filter type.")
+
+        delta_f = transition_band / sampling_freq
+
+        # Determine the window type and calculate N based on Stop Band Attenuation
+        if 1 <= stop_atten <= 21:
+            window_type = "Rectangular"
+            window_factor = 0.9
+        elif 22 <= stop_atten <= 44:
+            window_type = "Hanning"
+            window_factor = 3.1
+        elif 45 <= stop_atten <= 53:
+            window_type = "Hamming"
+            window_factor = 3.3
+        elif 54 <= stop_atten <= 74:
+            window_type = "Blackman"
+            window_factor = 5.5
+        else:
+            raise ValueError("Stop band attenuation out of range for known windows.")
+
+        N = math.ceil(window_factor / delta_f)
+        if N % 2 == 0:  # Ensure N is odd
+            N += 1
+
+        # Create symmetric range for n
+        n = np.arange(-(N // 2), N // 2 + 1)
+        hd = np.zeros_like(n, dtype=float)
+
+        # Calculate the ideal impulse response (h_d[n]) based on filter type
+        if filter_type == "low":
+            fc_normalized = (cutoff_freq + (transition_band / 2)) / sampling_freq
+            wc = 2 * np.pi * fc_normalized
+            hd[n == 0] = 2 * fc_normalized
+            hd[n != 0] = (2 * fc_normalized) * (np.sin(n[n != 0] * wc) / (n[n != 0] * wc))
+        elif filter_type == "high":
+            fc_normalized = (cutoff_freq - (transition_band / 2)) / sampling_freq
+            wc = 2 * np.pi * fc_normalized
+            hd[n == 0] = 1 - (2 * fc_normalized)
+            hd[n != 0] = -2 * fc_normalized * (np.sin(n[n != 0] * wc) / (n[n != 0] * wc))
+        elif filter_type == "band pass":
+            fc_normalized = (cutoff_freq - (transition_band / 2)) / sampling_freq
+            f2_normalized = (f2 + (transition_band / 2)) / sampling_freq
+            wc = 2 * np.pi * fc_normalized
+            w2 = 2 * np.pi * f2_normalized
+            hd[n == 0] = 2 * (f2_normalized - fc_normalized)
+            hd[n != 0] = ((2 * f2_normalized) * (np.sin(n[n != 0] * w2) / (n[n != 0] * w2))) - \
+                         ((2 * fc_normalized) * (np.sin(n[n != 0] * wc) / (n[n != 0] * wc)))
+        elif filter_type == "band stop":
+            fc_normalized = (cutoff_freq + (transition_band / 2)) / sampling_freq
+            f2_normalized = (f2 - (transition_band / 2)) / sampling_freq
+            wc = 2 * np.pi * fc_normalized
+            w2 = 2 * np.pi * f2_normalized
+            hd[n == 0] = 1 - 2 * (f2_normalized - fc_normalized)
+            hd[n != 0] = ((2 * fc_normalized) * (np.sin(n[n != 0] * wc) / (n[n != 0] * wc))) - \
+                         ((2 * f2_normalized) * (np.sin(n[n != 0] * w2) / (n[n != 0] * w2)))
+        else:
+            raise ValueError("Invalid filter type.")
+
+        # Compute the window function
+        if window_type == "Rectangular":
+            w = np.ones_like(n)
+        elif window_type == "Hanning":
+            w = 0.5 + 0.5 * np.cos(2 * np.pi * n / N)
+        elif window_type == "Hamming":
+            w = 0.54 + 0.46 * np.cos(2 * np.pi * n / N)
+        elif window_type == "Blackman":
+            w = 0.42 + 0.5 * np.cos(2 * np.pi * n / (N - 1)) + 0.08 * np.cos(4 * np.pi * n / (N - 1))
+
+        # Apply the window function to h_d[n]
+        h = hd * w
+        coefficients = [(int(idx), coeff) for idx, coeff in zip(n, h)]
+
+        with open("filter_coefficients.txt", "w") as file:
+            file.write("Filter Coefficients (h[n]):\n")
+            for idx, coeff in coefficients:
+                file.write(f"{idx} {coeff:.9f}\n")
+        messagebox.showinfo("Info", "Filter coefficients and indices saved to 'filter_coefficients.txt'.")
+
+        # Decide to apply convolution or just filtering
+        h_indices = np.arange(-(N // 2), (N // 2) + 1)
+        if test_cases % 2 == 0:
+            # Apply convolution
+            all_times, signals = self.read_signals_from_txt_files()
+            index1 = all_times[0]
+            signal = signals[0]
+
+            conv_index, conv_signal = convolve_signals(index1, signal, h_indices, h)
+            Compare_Signals(conv_index, conv_signal)
+            self.plot_signal(conv_index, conv_signal, "Filtered and Convolved Signal")
+        else:
+            # Only apply the filter
+            Compare_Signals(h_indices, h)
+            self.plot_signal(h_indices, h, "Filtered Signal")
+
     def smoothing_action(self):
         try:
             # Use your `reed` function to browse and read the signal
             indices, signals = self.read_signals_from_txt_files()  # Assuming this reads the signal as a list or numpy array
-            signal=signals[0]
+            signal = signals[0]
             # Ask the user for the window size
             window_size = simpledialog.askinteger("Input", "Enter window size for smoothing:")
             if window_size is None:  # If the user cancels
@@ -995,7 +1162,7 @@ class SignalPlotApp:
 
             # Smooth the signal
             smoothed_signal = smooth_signal(signal, window_size)
-            SignalSamplesAreEqual(indices,smoothed_signal)
+            SignalSamplesAreEqual(indices, smoothed_signal)
 
             # Display the result (or pass it to your framework for further processing)
             messagebox.showinfo("Smoothing Complete", "The signal has been smoothed.")
@@ -1003,6 +1170,7 @@ class SignalPlotApp:
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
     def convolution_action(self):
         try:
             # Read signals from files
@@ -1017,24 +1185,105 @@ class SignalPlotApp:
             signal2 = all_signals[1]
             indices2 = all_indices[1]
 
-            convolved_indices, convolved_signal = convolve_signals(indices1,signal1,indices2,signal2)
-            ConvTest(convolved_indices,convolved_signal)
+            convolved_indices, convolved_signal = convolve_signals(indices1, signal1, indices2, signal2)
+            ConvTest(convolved_indices, convolved_signal)
 
             # Display the results
-
 
             # Show completion message
             messagebox.showinfo("Convolution Complete", "Signals have been convolved successfully.")
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
     def corr_action(self):
-        indices,signals=self.read_signals_from_txt_files()
-        signal1=signals[0]
-        signal2=signals[1]
-        c_signal=normalized_cross_correlation(signal1,signal2)
+        indices, signals = self.read_signals_from_txt_files()
+        signal1 = signals[0]
+        signal2 = signals[1]
+        c_signal = normalized_cross_correlation(signal1, signal2)
         print(c_signal)
-        SignalSamplesAreEqual(indices[0],c_signal)
+        SignalSamplesAreEqual(indices[0], c_signal)
+
+    def lowpass(self, time, signal):
+        sampling_freq = 8000
+        stop_atten = 50
+        transition_band = 500
+        cutoff_freq = 1500
+        delta_f = transition_band / sampling_freq
+        # Determine the window type and calculate N based on Stop Band Attenuation
+        if 1 <= stop_atten <= 21:
+            window_type = "Rectangular"
+            window_factor = 0.9
+        elif 22 <= stop_atten <= 44:
+            window_type = "Hanning"
+            window_factor = 3.1
+        elif 45 <= stop_atten <= 53:
+            window_type = "Hamming"
+            window_factor = 3.3
+        elif 54 <= stop_atten <= 74:
+            window_type = "Blackman"
+            window_factor = 5.5
+        else:
+            raise ValueError("Stop band attenuation out of range for known windows.")
+        N = math.ceil(window_factor / delta_f)
+        if N % 2 == 0:  # Ensure N is odd
+            N += 1
+        n = np.arange(-(N // 2), N // 2 + 1)
+        hd = np.zeros_like(n, dtype=float)
+        fc_normalized = (cutoff_freq + (transition_band / 2)) / sampling_freq
+        wc = 2 * np.pi * fc_normalized
+        hd[n == 0] = 2 * fc_normalized
+        hd[n != 0] = (2 * fc_normalized) * (np.sin(n[n != 0] * wc) / (n[n != 0] * wc))
+        # Compute the window function
+        if window_type == "Rectangular":
+            w = np.ones_like(n)
+        elif window_type == "Hanning":
+            w = 0.5 + 0.5 * np.cos(2 * np.pi * n / N)
+        elif window_type == "Hamming":
+            w = 0.54 + 0.46 * np.cos(2 * np.pi * n / N)
+        elif window_type == "Blackman":
+            w = 0.42 + 0.5 * np.cos(2 * np.pi * n / (N - 1)) + 0.08 * np.cos(4 * np.pi * n / (N - 1))
+        h = hd * w
+        coefficients = [(int(idx), coeff) for idx, coeff in zip(n, h)]
+        h_indices = np.arange(-(N // 2), (N // 2) + 1)
+        return h_indices, h
+
+    def resample(self):
+
+        all_times, signals = self.read_signals_from_txt_files()
+        signal = signals[0]
+        time = all_times[0]
+
+        M = int(self.get_user_input("Enter the decimation factor (M): "))
+        L = int(self.get_user_input("Enter the interpolation factor (L): "))
+        i, s = self.lowpass(time, signal)
+        if M == 0 and L == 0:
+            raise ValueError("Both M and L cannot be zero.")
+
+        if M == 0 and L != 0:
+            upsampled_signal = np.zeros(len(signal) * L)
+            upsampled_signal[::L] = signal
+            conv_signal = np.convolve(upsampled_signal, s)
+            conv_signal = remove_trailing_zeros(conv_signal)
+            adjusted_indices = list(range(-26, -26 + len(conv_signal)))
+            Compare_Signals(adjusted_indices, conv_signal)
+        elif M != 0 and L == 0:
+            conv_indices,conv_signal = convolve_signals(time, signal, i, s)
+            downsampled_signal = conv_signal[::M]
+            adjusted_indices = list(range(-26, -26 + len(downsampled_signal)))
+            Compare_Signals(adjusted_indices, downsampled_signal)
+        elif M != 0 and L != 0:
+            upsampled_signal = np.zeros(len(signal) * L)
+            upsampled_signal[::L] = signal
+            conv_signal = np.convolve(upsampled_signal, s)
+            conv_signal = remove_trailing_zeros(conv_signal)
+            downsampled_signal = conv_signal[::M]
+            adjusted_indices = list(range(-26, -26 + len(downsampled_signal)))
+            Compare_Signals(adjusted_indices, downsampled_signal)
+        else:
+            raise ValueError("Invalid case encountered during resampling.")
+
+
 def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
     if len(SignalInput) != len(SignalOutput):
         return False
@@ -1042,12 +1291,15 @@ def SignalComapreAmplitude(SignalInput=[], SignalOutput=[]):
         if abs(SignalInput[i] - SignalOutput[i]) > 0.001:
             return False
     return True
+
+
 # Function to round phase shift
 def RoundPhaseShift(P):
     while P < 0:
         P += 2 * math.pi
     return float(P % (2 * math.pi))
-# Function to compare phase shifts
+
+
 def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
     if len(SignalInput) != len(SignalOutput):
         return False
@@ -1057,6 +1309,8 @@ def SignalComaprePhaseShift(SignalInput=[], SignalOutput=[]):
         if abs(A - B) > 0.0001:
             return False
     return True
+
+
 def custom_cumsum(signal):
     csum_result = []
     running_total = 0  # Initialize the running total to 0
@@ -1066,6 +1320,8 @@ def custom_cumsum(signal):
         csum_result.append(running_total)  # Store the running total in the result list
 
     return np.array(csum_result)  # Convert the list to a NumPy array for consistency
+
+
 def compute_dct(signal, m):
     N = len(signal)
     dct_result = [
@@ -1077,6 +1333,8 @@ def compute_dct(signal, m):
             f.write(f"{value}\n")
     print(f"The first {m} DCT coefficients have been saved to 'dct_coefficients.txt'.")
     return dct_result
+
+
 def DerivativeSignal():
     # Input signal
     InputSignal = [
@@ -1168,6 +1426,8 @@ def DerivativeSignal():
     plt.show()
 
     return
+
+
 def shift_signal(indices, signal, k):
     n = len(indices)
     shifted_signal = signal[:]  # Keep the signal (Y-values) the same
@@ -1190,11 +1450,15 @@ def shift_signal(indices, signal, k):
                 shifted_indices[i] = 0  # Or use any default value for out-of-range indices
 
     return shifted_indices, shifted_signal  # Return the shifted indices with the original signal
+
+
 def fold_signal(indices, signal):
     folded_indices = indices[::-1]  # Reverse the indices
     folded_signal = signal[::-1]  #
 
     return folded_indices, folded_signal  # Return both the time indices and the folded signal
+
+
 def fold_and_shift_signal(indices, signal, k):
     n = len(indices)
 
@@ -1218,6 +1482,8 @@ def fold_and_shift_signal(indices, signal, k):
     shifted_indices = [pair[0] for pair in sorted_pairs]
 
     return shifted_indices, shifted_signal
+
+
 def smooth_signal(signal, window_size):
     if window_size < 2 or len(signal) <= window_size:
         raise ValueError("Window size must be greater than 1 and signal length must be greater than window size")
@@ -1232,8 +1498,9 @@ def smooth_signal(signal, window_size):
         smoothed_signal.append(avg)
 
     return smoothed_signal
-def remove_dc_time_domain(signal):
 
+
+def remove_dc_time_domain(signal):
     # Manually compute the mean (DC component) of the signal
     sum_signal = sum(signal)
     n = len(signal)
@@ -1243,40 +1510,33 @@ def remove_dc_time_domain(signal):
     signal_no_dc = [x - dc_component for x in signal]
 
     return signal_no_dc
+
+
 def convolve_signals(indices1, signal1, indices2, signal2):
-    # Convert indices to integers if they are numpy.float64
+    # Convert indices to integers
     indices1 = np.array(indices1, dtype=int)
     indices2 = np.array(indices2, dtype=int)
 
-    start_index = indices1[0] + indices2[0]
-    end_index = indices1[-1] + indices2[-1]
+    # Calculate the start and end indices based on the sum of min and max indices
+    start_index = indices1.min() + indices2.min()
+    end_index = indices1.max() + indices2.max()
 
-    # Initialize an empty list for the result signal
-    convolved_signal = []
+    # Prepare an output signal initialized to zero
+    convolved_signal = [0] * (end_index - start_index + 1)
 
-    # Iterate over each possible index in the output signal
-    for n in range(start_index, end_index + 1):
-        conv_value = 0
-        # Compute the sum for the convolution at index n
-        for i in range(len(indices1)):
-            for j in range(len(indices2)):
-                if n == indices1[i] + indices2[j]:
-                    conv_value += signal1[i] * signal2[j]
-        convolved_signal.append(conv_value)
+    # Compute the convolution by iterating through all combinations
+    for i, ind1 in enumerate(indices1):
+        for j, ind2 in enumerate(indices2):
+            conv_index = ind1 + ind2 - start_index  # Align to the output index range
+            convolved_signal[conv_index] += signal1[i] * signal2[j]
 
-    # Create the corresponding indices for the convolved signal
-    convolved_indices = list(range(start_index, end_index + 1))
+    # Create the indices for the convolved signal
+    convolved_indices = np.arange(start_index, end_index + 1)
 
     return convolved_indices, convolved_signal
-def ConvTest(Your_indices, Your_samples):
-    """
-    Test inputs
-    InputIndicesSignal1 =[-2, -1, 0, 1]
-    InputSamplesSignal1 = [1, 2, 1, 1 ]
 
-    InputIndicesSignal2=[0, 1, 2, 3, 4, 5 ]
-    InputSamplesSignal2 = [ 1, -1, 0, 0, 1, 1 ]
-    """
+
+def ConvTest(Your_indices, Your_samples):
     expected_indices = [-2, -1, 0, 1, 2, 3, 4, 5, 6]
     expected_samples = [1, 1, -1, 0, 0, 3, 3, 2, 1]
 
@@ -1294,6 +1554,8 @@ def ConvTest(Your_indices, Your_samples):
             print("Conv Test case failed, your signal have different values from the expected one")
             return
     print("Conv Test case passed successfully")
+
+
 def normalized_cross_correlation(signal1, signal2):
     N = len(signal1)
     res = []  # List to store results
@@ -1305,7 +1567,7 @@ def normalized_cross_correlation(signal1, signal2):
         d2 = 0
 
         # Shift signal2 using np.roll
-        rolled_signal2 = np.roll(signal2, shift) # x2(i+ or - n)
+        rolled_signal2 = np.roll(signal2, shift)  # x2(i+ or - n)
 
         # Compute r12 (cross-correlation), d1, and d2 for the current shift
         for i in range(N):
@@ -1323,7 +1585,15 @@ def normalized_cross_correlation(signal1, signal2):
         res.append(r12 / denominator)
     return res
 
+
+def remove_trailing_zeros(signal):
+    # Find the last non-zero index and slice the signal
+    last_non_zero_index = len(signal) - 1
+    while last_non_zero_index >= 0 and signal[last_non_zero_index] == 0:
+        last_non_zero_index -= 1
+    return signal[:last_non_zero_index + 1]
+
+
 root = tk.Tk()
 app = SignalPlotApp(root)
 root.mainloop()
-
